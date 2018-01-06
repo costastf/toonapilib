@@ -7,3 +7,5 @@
 #
 # Please use Pipfile to update the requirements.
 #
+cachetools==2.0.1
+requests==2.18.4

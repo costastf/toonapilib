@@ -30,9 +30,7 @@ Print information about the agreement. Attributes are self explanatory.
     print(toon.agreement.solar)
     print(toon.agreement.toonly)
 
-Print information about the gas. Values are cached internally for 5 minutes
-so as to not overwhelm the api. After the 5 minutes any access to any of the
-attributes will refresh the information through a new call to the api.
+Print information about the gas. Values are cached internally for 30 seconds so as to not overwhelm the api. After the 30 seconds any access to any of the attributes will refresh the information through a new call to the api.
 
 .. code-block:: python
 
@@ -44,7 +42,7 @@ attributes will refresh the information through a new call to the api.
     print(toon.gas.meter_reading)
     print(toon.gas.value)
 
-Print information about the electricity. Values are cached internally for 5 minutes so as to not overwhelm the api. After the 5 minutes any access to any of the attributes will refresh the information through a new call to the api.
+Print information about the electricity. Values are cached internally for 30 seconds so as to not overwhelm the api. After the 30 seconds any access to any of the attributes will refresh the information through a new call to the api.
 
 .. code-block:: python
 
@@ -59,8 +57,7 @@ Print information about the electricity. Values are cached internally for 5 minu
     print(toon.power.value)
 
 
-Print information about the solar power production. Values are cached internally for 5 minutes so as to not overwhelm the api. After the 5 minutes
-  any access to any of the attributes will refresh the information through a new call to the api.
+Print information about the solar power production. Values are cached internally for 30 seconds so as to not overwhelm the api. After the 30 seconds any access to any of the attributes will refresh the information through a new call to the api.
 
 .. code-block:: python
 

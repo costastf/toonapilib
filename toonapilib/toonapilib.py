@@ -33,9 +33,10 @@ Main code for toonapilib
 
 import logging
 import requests
-# from cachetools import cached, TTLCache
+import json
+from cachetools import cached, TTLCache
 from .toonapilibexceptions import ChallengeCodeError, InvalidThermostatState
-from .configuration import STATES  # , STATE_CACHING_SECONDS
+from .configuration import STATES, STATE_CACHING_SECONDS
 from .helpers import (Agreement,
                       SmartPlug,
                       SmokeDetector,
@@ -63,12 +64,10 @@ LOGGER_BASENAME = '''toonapilib'''
 LOGGER = logging.getLogger(LOGGER_BASENAME)
 LOGGER.addHandler(logging.NullHandler())
 
-# state_cache = TTLCache(maxsize=1, ttl=STATE_CACHING_SECONDS)
+state_cache = TTLCache(maxsize=1, ttl=STATE_CACHING_SECONDS)
 
 
-# TODO fix active part of component
 # TODO authentication error hanlding for wrong credentials etc.
-# TODO enable caching on status retrieval
 
 class Toon(object):
     """Model of the toon smart meter from eneco."""
@@ -109,7 +108,9 @@ class Toon(object):
             location = response.headers.get('Location')
             code = location.split('code=')[1].split('&state')[0]
         except IndexError:
-            raise ChallengeCodeError(response.content)
+            message = ('Please make sure your credentials and keys are correct.'
+                       'Response received :{}'.format(response.content))
+            raise ChallengeCodeError(message)
         return code
 
     def _authenticate(self):
@@ -160,6 +161,7 @@ class Toon(object):
         url = '{base_url}/token'.format(base_url=self._base_url)
         response = requests.post(url, headers=headers, data=payload)
         tokens = response.json()
+        self._logger.debug(tokens)
         token_values = [tokens.get(key) for key in Token._fields]
         if not all(token_values):
             self._logger.exception(response.content)
@@ -173,7 +175,7 @@ class Toon(object):
         self.client = None
 
     @property
-    # @cached(state_cache)
+    @cached(state_cache)
     def status(self):
         url = ('{base_url}/toon/v3/'
                '{agreement_id}/status').format(base_url=self._base_url,
@@ -201,10 +203,9 @@ class Toon(object):
             response = self.original_request(url, **kwargs)
         return response
 
-    #
-    # def _clear_cache(self):
-    #     self._logger.debug('Clearing state cache.')
-    #     state_cache.clear()
+    def _clear_cache(self):
+        self._logger.debug('Clearing state cache.')
+        state_cache.clear()
 
     @property
     def smokedetectors(self):
@@ -289,6 +290,7 @@ class Toon(object):
 
     @property
     def solar(self):
+        """:return: A solar object modeled as a named tuple"""
         power = self.status['powerUsage']
         return Solar(power.get('maxSolar'),
                      power.get('valueProduced'),
@@ -369,20 +371,23 @@ class Toon(object):
                                'State chosen!')
         return state
 
-    # @thermostat_state.setter
-    # def thermostat_state(self, name):
-    #     """Changes the thermostat state to the one passed as an argument
-    #
-    #     :param name: The name of the thermostat state to change to.
-    #     """
-    #     self._validate_thermostat_state_name(name)
-    #     id_ = next((key for key in STATES.keys()
-    #                 if STATES[key].lower() == name.lower()), None)
-    #     url = '{api_url}/thermostat'.format(api_url=self._api_url)
-    #     data = {"nextState": id_}
-    #     response = requests.put(url, data=data, headers=self._headers)
-    #     self._logger.debug('Response received {}'.format(response.content))
-        # self._clear_cache()
+    @thermostat_state.setter
+    def thermostat_state(self, name):
+        """Changes the thermostat state to the one passed as an argument
+
+        :param name: The name of the thermostat state to change to.
+        """
+        self._validate_thermostat_state_name(name)
+        id_ = next((key for key in STATES.keys()
+                    if STATES[key].lower() == name.lower()), None)
+        url = '{api_url}/thermostat'.format(api_url=self._api_url)
+        data = requests.get(url, headers=self._headers).json()
+        data["activeState"] = id_
+        response = requests.put(url,
+                                data=json.dumps(data),
+                                headers=self._headers)
+        self._logger.debug('Response received {}'.format(response.content))
+        self._clear_cache()
 
     @property
     def thermostat(self):
@@ -393,18 +398,33 @@ class Toon(object):
         """
         return float(self.thermostat_info.current_set_point / 100)
 
-    # @thermostat.setter
-    # def thermostat(self, temperature):
-    #     """A temperature to set the thermostat to. Requires a float.
-    #
-    #     :param temperature: A float of the desired temperature to change to.
-    #     """
-    #     target = int(temperature * 100)
-    #     url = '{api_url}/thermostat'.format(api_url=self._api_url)
-    #     data = {"nextSetpoint": target}
-    #     response = requests.put(url, data=data, headers=self._headers)
-    #     self._logger.debug('Response received {}'.format(response.content))
-        # self._clear_cache()
+    @thermostat.setter
+    def thermostat(self, temperature):
+        """A temperature to set the thermostat to. Requires a float.
+
+        :param temperature: A float of the desired temperature to change to.
+        """
+        try:
+            target = int(temperature * 100)
+        except ValueError:
+            self._logger.error('Please supply a valid temperature e.g: 20')
+            return
+        url = '{api_url}/thermostat'.format(api_url=self._api_url)
+        response = requests.get(url, headers=self._headers)
+        if not response.ok:
+            self._logger.error(response.json)
+            return
+        data = response.json()
+        data["currentSetpoint"] = target
+        data["activeState"] = -1
+        response = requests.put(url,
+                                data=json.dumps(data),
+                                headers=self._headers)
+        if not response.ok:
+            self._logger.error(response.json)
+            return
+        self._logger.debug('Response received {}'.format(response.content))
+        self._clear_cache()
 
     @property
     def temperature(self):

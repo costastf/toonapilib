@@ -4,6 +4,7 @@
 """All helper objects will live here"""
 
 import logging
+import json
 import requests
 from collections import namedtuple
 
@@ -85,65 +86,6 @@ SmokeDetector = namedtuple('SmokeDetector', ('device_uuid',
                                              'battery_level',
                                              'device_type'))
 
-#
-# class Data(object):
-#     """Data object exposing flow and graph attributes."""
-#
-#     class Flow(object):
-#         """The object that exposes the flow information of categories in toon
-#
-#         The information is rrd metrics and the object dynamically handles the
-#         accessing of attributes matching with the corresponding api endpoint
-#         if they are know, raises an exception if not.
-#         """
-#
-#         def __init__(self, toon_instance):
-#             self.toon = toon_instance
-#             self._endpoint = {'power': '/client/auth/getElecFlowData',
-#                               'gas': '/client/auth/getGasFlowData',
-#                               'solar': '/client/auth/getSolarFlowData'}
-#
-#         def __getattr__(self, name):
-#             """Implements dynamic atributes on the Flow object"""
-#             endpoint = self._endpoint.get(name)
-#             if not endpoint:
-#                 raise AttributeError(name)
-#             data = self.toon._get_data(endpoint)
-#             return data.get('graphData') if data.get('success') else None
-#
-#     class Graph(object):
-#         """The object that exposes the graph information of categories in toon
-#
-#         The information is rrd metrics and the object dynamically handles the
-#         accessing of attributes matching with the corresponding api endpoint
-#         if they are know, raises an exception if not.
-#         """
-#
-#         def __init__(self, toon_instance):
-#             self.toon = toon_instance
-#             self._endpoint = {'power': '/client/auth/getElecGraphData',
-#                               'gas': '/client/auth/getGasGraphData',
-#                               'solar': '/client/auth/getSolarGraphData',
-#                               'district_heat':
-#                                   '/client/auth/getDistrictHeatGraphData'}
-#
-#         def __getattr__(self, name):
-#             """Implements dynamic atributes on the Graph object"""
-#             endpoint = self._endpoint.get(name)
-#             if not endpoint:
-#                 raise AttributeError(name)
-#             data = self.toon._get_data(endpoint)
-#             return data.get('graphData') if data.get('success') else None
-#
-#     def __init__(self, toon_instance):
-#         logger_name = u'{base}.{suffix}'.format(base=LOGGER_BASENAME,
-#                                                 suffix=self.__class__.__name__)
-#         self._logger = logging.getLogger(logger_name)
-#         self.flow = self.Flow(toon_instance)
-#         self.graph = self.Graph(toon_instance)
-
-# TODO get device info on initial call and cache static values
-
 
 class Switch(object):
     """Core object to implement the turning on, off or toggle
@@ -191,10 +133,13 @@ class Switch(object):
         else:
             url = '{api_url}/devices/{id}'.format(api_url=self.toon._api_url,
                                                   id=self.device_uuid)
-            data = {"currentState": state}
-            response = requests.put(url, data=data, headers=self.toon._headers)
+            data = requests.get(url, headers=self.toon._headers).json()
+            data["currentState"] = int(state)
+            response = requests.put(url,
+                                    data=json.dumps(data),
+                                    headers=self.toon._headers)
             self._logger.debug('Response received {}'.format(response.content))
-            # self.toon._clear_cache()  # noqa
+            self.toon._clear_cache()  # noqa
             return True
 
     @property

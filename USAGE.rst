@@ -2,11 +2,11 @@
 Usage
 =====
 
-To use toonlib in a project:
+To use toonapilib in a project:
 
 .. code-block:: python
 
-    from toonlib import Toon
+    from toonapilib import Toon
 
     eneco_username = 'USERNAME'
     eneco_password = 'PASSWORD'
@@ -210,4 +210,3 @@ Work with the thermostat
 
     # manually assign temperature to thermostat. This will override the thermostat state
     toon.thermostat = 20
-

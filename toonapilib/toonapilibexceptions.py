@@ -42,20 +42,16 @@ __email__ = '''<costas.tyf@gmail.com>'''
 __status__ = '''Development'''  # "Prototype", "Development", "Production".
 
 
-class ChallengeCodeError(Exception):
-    """The code did not receive a proper 302 response to retrieve the code"""
+class InvalidConsumerSecret(Exception):
+    """The consumer secret is invalid"""
+
+
+class InvalidConsumerKey(Exception):
+    """The consumer key is invalid"""
 
 
 class InvalidCredentials(Exception):
     """The username and password combination was not accepted as valid"""
-
-
-class UnableToGetSession(Exception):
-    """Could not refresh session"""
-
-
-class IncompleteResponse(Exception):
-    """Vital information is missing from the response"""
 
 
 class InvalidThermostatState(Exception):

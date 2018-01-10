@@ -31,22 +31,27 @@ Main code for toonapilib
 
 """
 
-import logging
-import requests
 import json
-from cachetools import cached, TTLCache
-from .toonapilibexceptions import ChallengeCodeError, InvalidThermostatState
+import logging
+
+import requests
+from cachetools import TTLCache, cached
+
 from .configuration import STATES, STATE_CACHING_SECONDS
 from .helpers import (Agreement,
+                      Light,
+                      PowerUsage,
                       SmartPlug,
                       SmokeDetector,
                       Solar,
-                      PowerUsage,
-                      Light,
-                      Usage,
                       ThermostatInfo,
                       ThermostatState,
-                      Token)
+                      Token,
+                      Usage)
+from .toonapilibexceptions import (InvalidCredentials,
+                                   InvalidThermostatState,
+                                   InvalidConsumerKey,
+                                   InvalidConsumerSecret)
 
 __author__ = '''Costas Tyfoxylos <costas.tyf@gmail.com>'''
 __docformat__ = '''google'''
@@ -64,12 +69,10 @@ LOGGER_BASENAME = '''toonapilib'''
 LOGGER = logging.getLogger(LOGGER_BASENAME)
 LOGGER.addHandler(logging.NullHandler())
 
-state_cache = TTLCache(maxsize=1, ttl=STATE_CACHING_SECONDS)
+STATE_CACHE = TTLCache(maxsize=1, ttl=STATE_CACHING_SECONDS)
 
 
-# TODO authentication error hanlding for wrong credentials etc.
-
-class Toon(object):
+class Toon(object):  # pylint: disable=too-many-instance-attributes
     """Model of the toon smart meter from eneco."""
 
     def __init__(self,
@@ -103,14 +106,13 @@ class Toon(object):
                    'scope': ''}
         response = requests.post(url, data=payload, allow_redirects=False)
         if response.status_code != 302:
-            raise ChallengeCodeError(response.content)
+            raise InvalidConsumerKey(response.text)
         try:
             location = response.headers.get('Location')
             code = location.split('code=')[1].split('&state')[0]
         except IndexError:
-            message = ('Please make sure your credentials and keys are correct.'
-                       'Response received :{}'.format(response.content))
-            raise ChallengeCodeError(message)
+            # message = 'Please make sure your credentials and keys are correct.'
+            raise InvalidCredentials(response.text)
         return code
 
     def _authenticate(self):
@@ -165,18 +167,17 @@ class Toon(object):
         token_values = [tokens.get(key) for key in Token._fields]
         if not all(token_values):
             self._logger.exception(response.content)
-            raise ValueError('Incomplete token response received. '
-                             'Got: {}'.format(response.json()))
+            raise InvalidConsumerSecret(response.text)
         return Token(*token_values)
 
     def _reset(self):
         self.agreements = None
         self.agreement = None
-        self.client = None
 
     @property
-    @cached(state_cache)
+    @cached(STATE_CACHE)
     def status(self):
+        """The status of toon, cached for 30 seconds"""
         url = ('{base_url}/toon/v3/'
                '{agreement_id}/status').format(base_url=self._base_url,
                                                agreement_id=self.agreement.id)
@@ -184,16 +185,14 @@ class Toon(object):
         return response.json()
 
     def _monkey_patch_requests(self):
-        self.original_request = requests.get
+        self.original_request = requests.get  # pylint: disable=attribute-defined-outside-init
         requests.get = self._patched_request
 
     def _patched_request(self, url, **kwargs):
         self._logger.debug('Using patched request for url {}'.format(url))
         response = self.original_request(url, **kwargs)
-        if response.status_code == 401 and \
-                response.json().get('fault', {}
-                                    ).get('faultstring', {}
-                                          ) == 'Access Token expired':
+        if response.status_code == 401 and response.json().get('fault', {}).get(
+                'faultstring', '') == 'Access Token expired':
             self._logger.info('Expired token detected, trying to refresh!')
             self._token = self._refresh_token()
             self._set_headers(self._token)
@@ -205,7 +204,7 @@ class Toon(object):
 
     def _clear_cache(self):
         self._logger.debug('Clearing state cache.')
-        state_cache.clear()
+        STATE_CACHE.clear()
 
     @property
     def smokedetectors(self):
@@ -350,12 +349,13 @@ class Toon(object):
 
     @property
     def burner_on(self):
+        """Boolean value of the state of the burner"""
         return True if int(self.thermostat_info.burner_info) else False
 
     @staticmethod
     def _validate_thermostat_state_name(name):
         if name.lower() not in [value.lower() for value in STATES.values()
-                                if not value.lower() == 'unknown']:
+                                if value.lower() != 'unknown']:
             raise InvalidThermostatState(name)
 
     @property
@@ -378,8 +378,8 @@ class Toon(object):
         :param name: The name of the thermostat state to change to.
         """
         self._validate_thermostat_state_name(name)
-        id_ = next((key for key in STATES.keys()
-                    if STATES[key].lower() == name.lower()), None)
+        id_ = next((id_ for id_, state in STATES.items()
+                    if state.lower() == name.lower()), None)
         url = '{api_url}/thermostat'.format(api_url=self._api_url)
         data = requests.get(url, headers=self._headers).json()
         data["activeState"] = id_

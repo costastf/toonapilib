@@ -32,7 +32,10 @@ Import all parts from toonapilib here
    http://google.github.io/styleguide/pyguide.html
 """
 from ._version import __version__
-from .toonapilibexceptions import ChallengeCodeError
+from .toonapilibexceptions import (InvalidCredentials,
+                                   InvalidThermostatState,
+                                   InvalidConsumerKey,
+                                   InvalidConsumerSecret)
 from .toonapilib import Toon
 
 __author__ = '''Costas Tyfoxylos <costas.tyf@gmail.com>'''
@@ -52,4 +55,7 @@ assert __version__
 assert Toon
 
 # assert exceptions
-assert ChallengeCodeError
+assert InvalidConsumerKey
+assert InvalidConsumerSecret
+assert InvalidThermostatState
+assert InvalidCredentials

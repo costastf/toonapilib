@@ -96,7 +96,15 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes
         self._authenticate()
 
     def _get_challenge_code(self):
-        url = '{base_url}/authorize/legacy'.format(base_url=self._base_url)
+        url = '{base_url}/authorize'.format(base_url=self._base_url)
+        params = {'tenant_id': 'eneco',
+                  'response_type': 'code',
+                  'redirect_uri': 'http://127.0.0.1',
+                  'client_id': self._client_id}
+        # it seems to be required to GET the url before submitting data
+        _ = requests.get(url, params=params)
+        del _
+        post_url = '{url}/legacy'.format(url=url)
         payload = {'username': self._username,
                    'password': self._password,
                    'tenant_id': 'eneco',
@@ -104,12 +112,12 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes
                    'client_id': self._client_id,
                    'state': '',
                    'scope': ''}
-        response = requests.post(url, data=payload, allow_redirects=False)
+        response = requests.post(post_url, data=payload, allow_redirects=False)
         if response.status_code != 302:
             raise InvalidConsumerKey(response.text)
         try:
             location = response.headers.get('Location')
-            code = location.split('code=')[1].split('&state')[0]
+            code = location.split('code=')[1].split('&scope')[0]
         except IndexError:
             # message = 'Please make sure your credentials and keys are correct.'
             raise InvalidCredentials(response.text)

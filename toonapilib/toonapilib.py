@@ -37,7 +37,7 @@ import logging
 import requests
 from cachetools import TTLCache, cached
 
-from .configuration import STATES, STATE_CACHING_SECONDS
+from .configuration import STATES, STATE_CACHING_SECONDS, BURNER_STATES
 from .helpers import (Agreement,
                       Light,
                       PowerUsage,
@@ -359,6 +359,11 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes
     def burner_on(self):
         """Boolean value of the state of the burner"""
         return True if int(self.thermostat_info.burner_info) else False
+
+    @property
+    def burner_state(self):
+        """The state the burner is in."""
+        return BURNER_STATES.get(int(self.thermostat_info.burner_info))
 
     @staticmethod
     def _validate_thermostat_state_name(name):

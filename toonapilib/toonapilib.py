@@ -75,11 +75,12 @@ STATE_CACHE = TTLCache(maxsize=1, ttl=STATE_CACHING_SECONDS)
 class Toon(object):  # pylint: disable=too-many-instance-attributes
     """Model of the toon smart meter from eneco."""
 
-    def __init__(self,
+    def __init__(self,  # pylint: disable=too-many-arguments
                  eneco_username,
                  eneco_password,
                  consumer_key,
-                 consumer_secret):
+                 consumer_secret,
+                 tenant_id='eneco'):
         logger_name = u'{base}.{suffix}'.format(base=LOGGER_BASENAME,
                                                 suffix=self.__class__.__name__)
         self._logger = logging.getLogger(logger_name)
@@ -89,6 +90,7 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes
         self._password = eneco_password
         self._client_id = consumer_key
         self._client_secret = consumer_secret
+        self._tenant_id = tenant_id
         self.agreements = None
         self.agreement = None
         self._headers = None
@@ -107,7 +109,7 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes
         post_url = '{url}/legacy'.format(url=url)
         payload = {'username': self._username,
                    'password': self._password,
-                   'tenant_id': 'eneco',
+                   'tenant_id': self._tenant_id,
                    'response_type': 'code',
                    'client_id': self._client_id,
                    'state': '',

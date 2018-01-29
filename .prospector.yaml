@@ -4,6 +4,8 @@ pep257:
     - D212
     - D213
     - D107
+    - D406
+    - D407
 ignore-paths:
   - _CI
   - build

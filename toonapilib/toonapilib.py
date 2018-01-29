@@ -72,7 +72,7 @@ LOGGER.addHandler(logging.NullHandler())
 STATE_CACHE = TTLCache(maxsize=1, ttl=STATE_CACHING_SECONDS)
 
 
-class Toon(object):  # pylint: disable=too-many-instance-attributes
+class Toon(object):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """Model of the toon smart meter from eneco."""
 
     def __init__(self,  # pylint: disable=too-many-arguments
@@ -177,7 +177,7 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes
             bool: True on success, False otherwise
 
         """
-        if not agreement_id in self.agreements_ids:
+        if agreement_id not in self.agreements_ids:
             self._logger.error('No agreement with id %s', agreement_id)
             return False
         agreement = next((agreement for agreement in self.agreements

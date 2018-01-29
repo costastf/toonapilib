@@ -80,7 +80,8 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes
                  eneco_password,
                  consumer_key,
                  consumer_secret,
-                 tenant_id='eneco'):
+                 tenant_id='eneco',
+                 enabled_agreement_id=None):
         logger_name = u'{base}.{suffix}'.format(base=LOGGER_BASENAME,
                                                 suffix=self.__class__.__name__)
         self._logger = logging.getLogger(logger_name)
@@ -96,6 +97,18 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes
         self._headers = None
         self._token = None
         self._authenticate()
+        if enabled_agreement_id:
+            self.enable_agreement_by_id(enabled_agreement_id)
+
+    @property
+    def agreements_ids(self):
+        """The ids of all the agreements
+
+        Returns:
+            list: A list of the agreement ids.
+
+        """
+        return [agreement.id for agreement in self.agreements]
 
     def _get_challenge_code(self):
         url = '{base_url}/authorize'.format(base_url=self._base_url)
@@ -153,6 +166,26 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes
                                      agreement.get('isToonly'))
                            for agreement in agreements]
         self.agreement = self.agreements[0]
+
+    def enable_agreement_by_id(self, agreement_id):
+        """Enables an agreement by id
+
+        Args:
+            agreement_id: The id of the agreement to enable
+
+        Returns:
+            bool: True on success, False otherwise
+
+        """
+        if not agreement_id in self.agreements_ids:
+            self._logger.error('No agreement with id %s', agreement_id)
+            return False
+        agreement = next((agreement for agreement in self.agreements
+                          if agreement.id == agreement_id), None)
+        if agreement:
+            self.agreement = agreement
+            return True
+        return False
 
     def _get_token(self, code):
         payload = {'client_id': self._client_id,

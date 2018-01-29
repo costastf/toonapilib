@@ -349,9 +349,9 @@
         },
         "pipenv": {
             "hashes": [
-                "sha256:cb1d4fe49c27eae1dd55f6d33f5c8325dd598ac3bda79968428e63aeff41365c"
+                "sha256:6c9b9d8e551a3086fc8300e18f93336fabbe3d8b9743dd1145e50a766f60e8f1"
             ],
-            "version": "==9.0.2"
+            "version": "==9.0.3"
         },
         "pluggy": {
             "hashes": [
@@ -568,6 +568,7 @@
                 "sha256:39d88b533b422825d644087a21e78c45cf5af0ef7a99a1fc9fbb7b481e5c85b0",
                 "sha256:02f8102c2436bb03b3ee6dede1919d1dac8a427541652e5ec95171ec8adbc93a"
             ],
+            "markers": "python_version != '3.2'",
             "version": "==15.1.0"
         },
         "virtualenv-clone": {

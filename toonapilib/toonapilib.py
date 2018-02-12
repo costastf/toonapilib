@@ -81,7 +81,7 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes,too-many-pub
                  consumer_key,
                  consumer_secret,
                  tenant_id='eneco',
-                 enabled_agreement_id=None):
+                 display_common_name=None):
         logger_name = u'{base}.{suffix}'.format(base=LOGGER_BASENAME,
                                                 suffix=self.__class__.__name__)
         self._logger = logging.getLogger(logger_name)
@@ -97,18 +97,18 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes,too-many-pub
         self._headers = None
         self._token = None
         self._authenticate()
-        if enabled_agreement_id:
-            self.enable_agreement_by_id(enabled_agreement_id)
+        if display_common_name:
+            self.enable_by_display_common_name(display_common_name)
 
     @property
-    def agreements_ids(self):
+    def display_names(self):
         """The ids of all the agreements
 
         Returns:
             list: A list of the agreement ids.
 
         """
-        return [agreement.id for agreement in self.agreements]
+        return [agreement.display_common_name.lower() for agreement in self.agreements]
 
     def _get_challenge_code(self):
         url = '{base_url}/authorize'.format(base_url=self._base_url)
@@ -167,21 +167,21 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes,too-many-pub
                            for agreement in agreements]
         self.agreement = self.agreements[0]
 
-    def enable_agreement_by_id(self, agreement_id):
-        """Enables an agreement by id
+    def enable_by_display_common_name(self, display_common_name):
+        """Enables an agreement by it's display common name
 
         Args:
-            agreement_id: The id of the agreement to enable
+            display_common_name: The display common name of the agreement to enable
 
         Returns:
             bool: True on success, False otherwise
 
         """
-        if agreement_id not in self.agreements_ids:
-            self._logger.error('No agreement with id %s', agreement_id)
+        if display_common_name.lower() not in self.display_names:
+            self._logger.error('No agreement with display name %s', display_common_name)
             return False
         agreement = next((agreement for agreement in self.agreements
-                          if agreement.id == agreement_id), None)
+                          if agreement.display_common_name.lower() == display_common_name.lower()), None)
         if agreement:
             self.agreement = agreement
             return True

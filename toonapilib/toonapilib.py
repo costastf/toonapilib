@@ -338,8 +338,8 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes,too-many-pub
                      power.get('valueProduced'),
                      power.get('valueSolar'),
                      power.get('avgProduValue'),
-                     power.get('meterReadingLowProdu'),
-                     power.get('meterReadingProdu'),
+                     power.get('meterReadingLowFeedIn'),
+                     power.get('meterReadingFeedIn'),
                      power.get('dayCostProduced'))
 
     @property

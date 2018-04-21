@@ -56,3 +56,7 @@ class InvalidCredentials(Exception):
 
 class InvalidThermostatState(Exception):
     """Vital information is missing from the response"""
+
+
+class IncompleteStatus(Exception):
+    """The status received is missing vital information and is unusable"""

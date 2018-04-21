@@ -51,7 +51,8 @@ from .helpers import (Agreement,
 from .toonapilibexceptions import (InvalidCredentials,
                                    InvalidThermostatState,
                                    InvalidConsumerKey,
-                                   InvalidConsumerSecret)
+                                   InvalidConsumerSecret,
+                                   IncompleteStatus)
 
 __author__ = '''Costas Tyfoxylos <costas.tyf@gmail.com>'''
 __docformat__ = '''google'''
@@ -225,7 +226,16 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes,too-many-pub
                '{agreement_id}/status').format(base_url=self._base_url,
                                                agreement_id=self.agreement.id)
         response = requests.get(url, headers=self._headers)
-        return response.json()
+        if response.status_code == 202:
+            self._logger.debug('Response accepted but no data yet, '
+                               'trying one more time...')
+        response = requests.get(url, headers=self._headers)
+        try:
+            data = response.json()
+        except ValueError:
+            self._logger.debug('No json on response :{}'.format(response.text))
+            raise IncompleteStatus
+        return data
 
     def _monkey_patch_requests(self):
         self.original_request = requests.get  # pylint: disable=attribute-defined-outside-init
@@ -304,10 +314,17 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes,too-many-pub
         return next((plug for plug in self.smartplugs
                      if plug.name.lower() == name.lower()), None)
 
+    def _get_status_value(self, value):
+        try:
+            output = self.status[value]
+        except KeyError:
+            raise IncompleteStatus(self.status)
+        return output
+
     @property
     def gas(self):
         """:return: A gas object modeled as a named tuple"""
-        usage = self.status['gasUsage']
+        usage = self._get_status_value('gasUsage')
         return Usage(usage.get('avgDayValue'),
                      usage.get('avgValue'),
                      usage.get('dayCost'),
@@ -319,7 +336,7 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes,too-many-pub
     @property
     def power(self):
         """:return: A power object modeled as a named tuple"""
-        power = self.status['powerUsage']
+        power = self._get_status_value('powerUsage')
         return PowerUsage(power.get('avgDayValue'),
                           power.get('avgValue'),
                           power.get('dayCost'),
@@ -333,7 +350,7 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes,too-many-pub
     @property
     def solar(self):
         """:return: A solar object modeled as a named tuple"""
-        power = self.status['powerUsage']
+        power = self._get_status_value('powerUsage')
         return Solar(power.get('maxSolar'),
                      power.get('valueProduced'),
                      power.get('valueSolar'),
@@ -345,7 +362,7 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes,too-many-pub
     @property
     def thermostat_info(self):
         """:return: A thermostatinfo object modeled as a named tuple"""
-        info = self.status['thermostatInfo']
+        info = self._get_status_value('thermostatInfo')
         return ThermostatInfo(info.get('activeState'),
                               info.get('boilerModuleConnected'),
                               info.get('burnerInfo'),
@@ -365,11 +382,12 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes,too-many-pub
     @property
     def thermostat_states(self):
         """:return: A list of thermostatstate object modeled as named tuples"""
+        states = self._get_status_value('thermostatStates').get('state', [])
         return [ThermostatState(STATES[state.get('id')],
                                 state.get('id'),
                                 state.get('tempValue'),
                                 state.get('dhw'))
-                for state in self.status['thermostatStates']['state']]
+                for state in states]
 
     def get_thermostat_state_by_name(self, name):
         """Retrieves a thermostat state object by its assigned name

@@ -35,7 +35,8 @@ from ._version import __version__
 from .toonapilibexceptions import (InvalidCredentials,
                                    InvalidThermostatState,
                                    InvalidConsumerKey,
-                                   InvalidConsumerSecret)
+                                   InvalidConsumerSecret,
+                                   IncompleteStatus)
 from .toonapilib import Toon
 
 __author__ = '''Costas Tyfoxylos <costas.tyf@gmail.com>'''
@@ -59,3 +60,4 @@ assert InvalidConsumerKey
 assert InvalidConsumerSecret
 assert InvalidThermostatState
 assert InvalidCredentials
+assert IncompleteStatus

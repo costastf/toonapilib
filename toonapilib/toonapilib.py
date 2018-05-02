@@ -244,7 +244,14 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes,too-many-pub
     def _patched_request(self, url, **kwargs):
         self._logger.debug('Using patched request for url {}'.format(url))
         response = self.original_request(url, **kwargs)
-        if response.status_code == 401 and response.json().get('fault', {}).get(
+        try:
+            response_json = response.json()
+        except ValueError:
+            message = ('Did not receive valid json, '
+                       'response was:{}').format(response.text)
+            response_json = {}
+            self._logger.debug(message)
+        if response.status_code == 401 and response_json.get('fault', {}).get(
                 'faultstring', '') == 'Access Token expired':
             self._logger.info('Expired token detected, trying to refresh!')
             self._token = self._refresh_token()

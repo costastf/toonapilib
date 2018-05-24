@@ -36,7 +36,8 @@ from .toonapilibexceptions import (InvalidCredentials,
                                    InvalidThermostatState,
                                    InvalidConsumerKey,
                                    InvalidConsumerSecret,
-                                   IncompleteStatus)
+                                   IncompleteStatus,
+                                   AgreementsRetrievalError)
 from .toonapilib import Toon
 
 __author__ = '''Costas Tyfoxylos <costas.tyf@gmail.com>'''
@@ -61,3 +62,4 @@ assert InvalidConsumerSecret
 assert InvalidThermostatState
 assert InvalidCredentials
 assert IncompleteStatus
+assert AgreementsRetrievalError

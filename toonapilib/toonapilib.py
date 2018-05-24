@@ -52,7 +52,8 @@ from .toonapilibexceptions import (InvalidCredentials,
                                    InvalidThermostatState,
                                    InvalidConsumerKey,
                                    InvalidConsumerSecret,
-                                   IncompleteStatus)
+                                   IncompleteStatus,
+                                   AgreementsRetrievalError)
 
 __author__ = '''Costas Tyfoxylos <costas.tyf@gmail.com>'''
 __docformat__ = '''google'''
@@ -156,16 +157,20 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes,too-many-pub
     def _get_agreements(self):
         url = '{base_url}/toon/v3/agreements'.format(base_url=self._base_url)
         response = requests.get(url, headers=self._headers)
-        agreements = response.json()
-        self.agreements = [Agreement(agreement.get('agreementId'),
-                                     agreement.get('agreementIdChecksum'),
-                                     agreement.get('heatingType'),
-                                     agreement.get('displayCommonName'),
-                                     agreement.get('displayHardwareVersion'),
-                                     agreement.get('displaySoftwareVersion'),
-                                     agreement.get('isToonSolar'),
-                                     agreement.get('isToonly'))
-                           for agreement in agreements]
+        try:
+            agreements = response.json()
+            self.agreements = [Agreement(agreement.get('agreementId'),
+                                         agreement.get('agreementIdChecksum'),
+                                         agreement.get('heatingType'),
+                                         agreement.get('displayCommonName'),
+                                         agreement.get('displayHardwareVersion'),
+                                         agreement.get('displaySoftwareVersion'),
+                                         agreement.get('isToonSolar'),
+                                         agreement.get('isToonly'))
+                               for agreement in agreements]
+        except (ValueError, AttributeError):
+            self._logger.debug('Unable to get agreements')
+            raise AgreementsRetrievalError(response.text)
         self.agreement = self.agreements[0]
 
     def enable_by_display_common_name(self, display_common_name):

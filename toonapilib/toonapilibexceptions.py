@@ -60,3 +60,7 @@ class InvalidThermostatState(Exception):
 
 class IncompleteStatus(Exception):
     """The status received is missing vital information and is unusable"""
+
+
+class AgreementsRetrievalError(Exception):
+    """Could not retrieve agreements"""

@@ -11,7 +11,7 @@ STATES = {0: 'Comfort',
           1: 'Home',
           2: 'Sleep',
           3: 'Away',
-          4: 'Unknown',
+          4: 'Holiday',
           5: 'Unknown'}
 
 BURNER_STATES = {0: 'off',

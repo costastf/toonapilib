@@ -7,3 +7,9 @@ History
 ---------------------
 
 * First code creation
+
+
+3.0.2 (16-02-2019)
+------------------
+
+* Ported to the latest template. Fixed an issue with the monkey patched requests get method assuming no other process running. Refactored some code to 3.7 specific.

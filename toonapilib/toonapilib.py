@@ -35,6 +35,7 @@ import json
 import logging
 
 import requests
+import coloredlogs
 from cachetools import TTLCache, cached
 
 from .configuration import STATES, STATE_CACHING_SECONDS, BURNER_STATES
@@ -54,6 +55,7 @@ from .toonapilibexceptions import (InvalidCredentials,
                                    InvalidConsumerSecret,
                                    IncompleteStatus,
                                    AgreementsRetrievalError)
+coloredlogs.auto_install()
 
 __author__ = '''Costas Tyfoxylos <costas.tyf@gmail.com>'''
 __docformat__ = '''google'''

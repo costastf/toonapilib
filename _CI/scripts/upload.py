@@ -29,6 +29,7 @@ import os
 # this sets up everything and MUST be included before any third party module in every step
 import _initialize_template
 
+from emoji import emojize
 from build import build
 from library import execute_command, validate_environment_variable_prerequisites
 from configuration import PREREQUISITES

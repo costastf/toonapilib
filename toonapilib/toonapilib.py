@@ -479,7 +479,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         :return: A float of the current setting of the temperature of the
         thermostat
         """
-        return float(self.thermostat_info.current_set_point / 100)
+        return self.thermostat_info.current_set_point / 100.0
 
     @thermostat.setter
     def thermostat(self, temperature):
@@ -515,4 +515,4 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
         :return: A float of the current temperature
         """
-        return float(self.thermostat_info.current_displayed_temperature / 100)
+        return self.thermostat_info.current_displayed_temperature / 100.0

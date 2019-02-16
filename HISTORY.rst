@@ -19,3 +19,9 @@ History
 ------------------
 
 * Small template cleanup
+
+
+3.0.4 (16-02-2019)
+------------------
+
+* fixed float representation for temperature

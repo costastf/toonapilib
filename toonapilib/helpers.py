@@ -6,7 +6,7 @@
 import json
 import logging
 
-import requestsgit pu
+import requests
 
 from dataclasses import dataclass
 

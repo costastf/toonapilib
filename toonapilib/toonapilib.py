@@ -35,6 +35,7 @@ import json
 import logging
 
 import requests
+import coloredlogs
 from cachetools import TTLCache, cached
 
 from .configuration import STATES, STATE_CACHING_SECONDS, BURNER_STATES
@@ -54,6 +55,7 @@ from .toonapilibexceptions import (InvalidCredentials,
                                    InvalidConsumerSecret,
                                    IncompleteStatus,
                                    AgreementsRetrievalError)
+coloredlogs.auto_install()
 
 __author__ = '''Costas Tyfoxylos <costas.tyf@gmail.com>'''
 __docformat__ = '''google'''
@@ -74,7 +76,7 @@ LOGGER.addHandler(logging.NullHandler())
 STATE_CACHE = TTLCache(maxsize=1, ttl=STATE_CACHING_SECONDS)
 
 
-class Toon(object):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
+class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """Model of the toon smart meter from eneco."""
 
     def __init__(self,  # pylint: disable=too-many-arguments
@@ -114,7 +116,7 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes,too-many-pub
 
     def _get_challenge_code(self):
         url = '{base_url}/authorize'.format(base_url=self._base_url)
-        params = {'tenant_id': 'eneco',
+        params = {'tenant_id': self._tenant_id,
                   'response_type': 'code',
                   'redirect_uri': 'http://127.0.0.1',
                   'client_id': self._client_id}
@@ -213,7 +215,7 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes,too-many-pub
         response = requests.post(url, headers=headers, data=payload)
         tokens = response.json()
         self._logger.debug(tokens)
-        token_values = [tokens.get(key) for key in Token._fields]
+        token_values = [tokens.get(key) for key in Token.__annotations__.keys()]  # pylint: disable=no-member
         if not all(token_values):
             self._logger.exception(response.content)
             raise InvalidConsumerSecret(response.text)
@@ -246,9 +248,12 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes,too-many-pub
         self.original_request = requests.get  # pylint: disable=attribute-defined-outside-init
         requests.get = self._patched_request
 
-    def _patched_request(self, url, **kwargs):
+    def _patched_request(self, url, params=None, **kwargs):
         self._logger.debug('Using patched request for url {}'.format(url))
-        response = self.original_request(url, **kwargs)
+        response = self.original_request(url, params=params, **kwargs)
+        if not url.startswith(self._base_url):
+            self._logger.debug('Url "%s" requested is not from toon api, passing through', url)
+            return response
         try:
             response_json = response.json()
         except ValueError:
@@ -264,7 +269,7 @@ class Toon(object):  # pylint: disable=too-many-instance-attributes,too-many-pub
             kwargs['headers'].update(
                 {'Authorization': 'Bearer {}'.format(self._token.access_token)})
             self._logger.debug('Updated headers, trying again initial request')
-            response = self.original_request(url, **kwargs)
+            response = self.original_request(url, params=params, **kwargs)
         return response
 
     def _clear_cache(self):

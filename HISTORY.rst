@@ -3,7 +3,7 @@
 History
 -------
 
-0.1.1 (2018-01-06)
+0.0.1 (09-12-2017)
 ---------------------
 
-* First release
+* First code creation

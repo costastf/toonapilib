@@ -1,5 +1,5 @@
 .. toonapilib documentation master file, created by
-   sphinx-quickstart on 2017-12-09.
+   sphinx-quickstart on 2019-02-16.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 

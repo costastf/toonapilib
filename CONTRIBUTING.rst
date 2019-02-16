@@ -17,22 +17,24 @@ Get Started!
 ------------
 
 Ready to contribute? Here's how to set up `toonapilib` for local development.
+Using of pipenv is highly recommended.
 
 1. Clone your fork locally::
 
     $ git clone https://github.com/costastf/toonapilib
 
-2. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your clone for local development::
+2. Install your local copy into a virtualenv. Assuming you have pipenv installed, this is how you set up your clone for local development::
 
-    $ mkvirtualenv toonapilib
     $ cd toonapilib/
-    $ python setup.py develop
+    $ pipenv install --ignore-pipfile
 
 3. Create a branch for local development::
 
     $ git checkout -b name-of-your-bugfix-or-feature
 
    Now you can make your changes locally.
+   Do your development while using the CI capabilities and making sure the code passes lint, test, build and document stages.
+
 
 4. Commit your changes and push your branch to the server::
 

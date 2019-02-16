@@ -5,9 +5,10 @@
 
 import json
 import logging
-from collections import namedtuple
 
-import requests
+import requestsgit pu
+
+from dataclasses import dataclass
 
 __author__ = '''Costas Tyfoxylos <costas.tyf@gmail.com>'''
 __docformat__ = 'plaintext'
@@ -18,77 +19,118 @@ LOGGER = logging.getLogger(LOGGER_BASENAME)
 LOGGER.addHandler(logging.NullHandler())
 
 
-Token = namedtuple('Token', ['access_token',
-                             'refresh_token_expires_in',
-                             'expires_in',
-                             'refresh_token'])
+@dataclass
+class Token:
+    """Models the token received from the service"""
 
-User = namedtuple('User', ['client_id',
-                           'client_secret',
-                           'username',
-                           'password'])
-
-Agreement = namedtuple('Agreement', ('id',
-                                     'checksum',
-                                     'heating_type',
-                                     'display_common_name',
-                                     'display_hardware_version',
-                                     'display_software_version',
-                                     'solar',
-                                     'toonly'))
-
-ThermostatState = namedtuple('ThermostatState', ('name',
-                                                 'id',
-                                                 'temperature',
-                                                 'dhw'))
-
-ThermostatInfo = namedtuple('ThermostatInfo', ('active_state',
-                                               'boiler_connected',
-                                               'burner_info',
-                                               'current_displayed_temperature',
-                                               'current_modulation_level',
-                                               'current_set_point',
-                                               'error_found',
-                                               'have_ot_boiler',
-                                               'next_program',
-                                               'next_set_point',
-                                               'next_state',
-                                               'next_time',
-                                               'ot_communication_error',
-                                               'program_state',
-                                               'real_set_point'))
+    access_token: str
+    refresh_token_expires_in: int
+    expires_in: int
+    refresh_token: str
 
 
-Usage = namedtuple('Usage', ('average_daily',
-                             'average',
-                             'daily_cost',
-                             'daily_usage',
-                             'is_smart',
-                             'meter_reading',
-                             'value'))
+@dataclass
+class User:
+    """Models the user"""
 
-Low = namedtuple('Low', ('meter_reading_low', 'daily_usage_low'))
-
-Solar = namedtuple('Solar', ('maximum',
-                             'produced',
-                             'value',
-                             'average_produced',
-                             'meter_reading_low_produced',
-                             'meter_reading_produced',
-                             'daily_cost_produced'))
-
-PowerUsage = namedtuple('PowerUsage',
-                        Usage._fields + Low._fields)
-
-SmokeDetector = namedtuple('SmokeDetector', ('device_uuid',
-                                             'name',
-                                             'last_connected_change',
-                                             'is_connected',
-                                             'battery_level',
-                                             'device_type'))
+    client_id: str
+    client_secret: str
+    username: str
+    password: str
 
 
-class Switch(object):
+@dataclass
+class Agreement:
+    """Models the agreement of the service"""
+
+    id: str
+    checksum: str
+    heating_type: str
+    display_common_name: str
+    display_hardware_version: str
+    display_software_version: str
+    solar: bool
+    toonly: bool
+
+
+@dataclass
+class ThermostatState:
+    """Models the thermostat state"""
+
+    name: str
+    id: int
+    temperature: int
+    dhw: int
+
+
+@dataclass
+class ThermostatInfo:
+    """Models the thermostat information"""
+
+    active_state: int
+    boiler_connected: int
+    burner_info: str
+    current_displayed_temperature: int
+    current_modulation_level: int
+    current_set_point: int
+    error_found: int
+    have_ot_boiler: int
+    next_program: int
+    next_set_point: int
+    next_state: int
+    next_time: int
+    ot_communication_error: str
+    program_state: int
+    real_set_point: str
+
+
+@dataclass
+class Usage:
+    """Models the core usage object"""
+
+    average_daily: int
+    average: int
+    daily_cost: int
+    daily_usage: int
+    is_smart: int
+    meter_reading: int
+    value: int
+
+
+@dataclass
+class PowerUsage(Usage):
+    """Models the power usage object"""
+
+    meter_reading_low: int
+    daily_usage_low: int
+
+
+@dataclass
+class Solar:
+    """Models the solar object"""
+
+    maximum: int
+    produced: int
+    value: int
+    average_produced: int
+    meter_reading_low_produced: int
+    meter_reading_produced: int
+    daily_cost_produced: int
+
+
+@dataclass
+class SmokeDetector:
+    """Models the smokedeterctors"""
+
+    device_uuid: str
+    name: str
+    last_connected_change: int
+    is_connected: int
+    battery_level: int
+    device_type: str
+
+
+class Switch:
     """Core object to implement the turning on, off or toggle
 
     Both hue lamps and fibaro plugs have a switch component that is shared.
@@ -270,9 +312,6 @@ class Light(Switch):
     It inherits from switch which is the common interface with the hue
     lamps to turn on, off or toggle
     """
-
-    def __init__(self, toon_instance, name):
-        Switch.__init__(toon_instance, name)
 
     @property
     def rgb_color(self):

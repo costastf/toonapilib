@@ -37,3 +37,9 @@ History
 ------------------
 
 * Fixed dumb bug 
+
+
+3.0.7 (23-02-2019)
+------------------
+
+* re implemented named tuples for python 3.5 and fixed newly introduced bug with token expiry optimization.

@@ -37,3 +37,4 @@ emoji = "~=0.5.1"
 coloredlogs = "~=10.0"
 requests = "~=2.21.0"
 cachetools = "~=3.1.0"
+dataclasses = {version = "~=0.6", markers="python_version == '3.6'"}

@@ -240,7 +240,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         try:
             data = response.json()
         except ValueError:
-            self._logger.debug('No json on response :{}'.format(response.text))
+            self._logger.debug('No json on response :%s', response.text)
             raise IncompleteStatus
         return data
 
@@ -250,7 +250,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     def _patched_request(self, *args, **kwargs):
         url = args[0]
-        self._logger.debug('Using patched request for url {}'.format(url))
+        self._logger.debug('Using patched request for url %s', url)
         response = self.original_request(*args, **kwargs)
         if not url.startswith(self._base_url):
             self._logger.debug('Url "%s" requested is not from toon api, passing through', url)
@@ -262,8 +262,8 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                        'response was:{}').format(response.text)
             response_json = {}
             self._logger.debug(message)
-        if all([response.status_code == 401,
-                response_json.get('fault', {}).get('faultstring', '') == 'Access Token expired']):
+        if response.status_code == 401 and response_json.get('fault', {}).get(
+                'faultstring', '') == 'Access Token expired':
             self._logger.info('Expired token detected, trying to refresh!')
             self._token = self._refresh_token()
             self._set_headers(self._token)

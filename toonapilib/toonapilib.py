@@ -262,8 +262,8 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                        'response was:{}').format(response.text)
             response_json = {}
             self._logger.debug(message)
-        if all(response.status_code == 401,
-               response_json.get('fault', {}).get('faultstring', '') == 'Access Token expired'):
+        if all([response.status_code == 401,
+                response_json.get('fault', {}).get('faultstring', '') == 'Access Token expired']):
             self._logger.info('Expired token detected, trying to refresh!')
             self._token = self._refresh_token()
             self._set_headers(self._token)

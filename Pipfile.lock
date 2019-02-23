@@ -46,10 +46,10 @@
         },
         "humanfriendly": {
             "hashes": [
-                "sha256:1d3a1c157602801c62dfdb321760229df2e0d4f14412a0f41b13ad3f930a936a",
-                "sha256:42d0aa829f59c710db20ec42eed24a8b7a27688d477da61b5aebd604d0bb2402"
+                "sha256:23057b10ad6f782e7bc3a20e3cb6768ab919f619bbdc0dd75691121bbde5591d",
+                "sha256:33ee8ceb63f1db61cce8b5c800c531e1a61023ac5488ccde2ba574a85be00a85"
             ],
-            "version": "==4.17"
+            "version": "==4.18"
         },
         "idna": {
             "hashes": [
@@ -216,10 +216,10 @@
         },
         "humanfriendly": {
             "hashes": [
-                "sha256:1d3a1c157602801c62dfdb321760229df2e0d4f14412a0f41b13ad3f930a936a",
-                "sha256:42d0aa829f59c710db20ec42eed24a8b7a27688d477da61b5aebd604d0bb2402"
+                "sha256:23057b10ad6f782e7bc3a20e3cb6768ab919f619bbdc0dd75691121bbde5591d",
+                "sha256:33ee8ceb63f1db61cce8b5c800c531e1a61023ac5488ccde2ba574a85be00a85"
             ],
-            "version": "==4.17"
+            "version": "==4.18"
         },
         "idna": {
             "hashes": [
@@ -378,10 +378,10 @@
         },
         "py": {
             "hashes": [
-                "sha256:bf92637198836372b520efcba9e020c330123be8ce527e535d185ed4b6f45694",
-                "sha256:e76826342cefe3c3d5f7e8ee4316b80d1dd8a300781612ddbc765c17ba25a6c6"
+                "sha256:64f65755aee5b381cea27766a3a147c3f15b9b6b9ac88676de66ba2ae36793fa",
+                "sha256:dc639b046a6e2cff5bbe40194ad65936d6ba360b52b3c3fe1d08a82dd50b5e53"
             ],
-            "version": "==1.7.0"
+            "version": "==1.8.0"
         },
         "pycodestyle": {
             "hashes": [
@@ -599,10 +599,10 @@
         },
         "virtualenv": {
             "hashes": [
-                "sha256:8b9abfc51c38b70f61634bf265e5beacf6fae11fc25d355d1871f49b8e45f0db",
-                "sha256:cceab52aa7d4df1e1871a70236eb2b89fcfe29b6b43510d9738689787c513261"
+                "sha256:5a3ecdfbde67a4a3b3111301c4d64a5b71cf862c8c42958d30cf3253df1f29dd",
+                "sha256:dffd40d19ab0168c02cf936de59590a3c0f2c8c4a36f363fcf3dae18728dc94e"
             ],
-            "version": "==16.4.0"
+            "version": "==16.4.1"
         },
         "webencodings": {
             "hashes": [

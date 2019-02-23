@@ -25,3 +25,9 @@ History
 ------------------
 
 * fixed float representation for temperature
+
+
+3.0.5 (23-02-2019)
+------------------
+
+* Tyring to fix library playing well with synology under Home Assistant

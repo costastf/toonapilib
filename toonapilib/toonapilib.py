@@ -248,9 +248,10 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         self.original_request = requests.get  # pylint: disable=attribute-defined-outside-init
         requests.get = self._patched_request
 
-    def _patched_request(self, url, params=None, **kwargs):
+    def _patched_request(self, *args, **kwargs):
+        url = args[0]
         self._logger.debug('Using patched request for url {}'.format(url))
-        response = self.original_request(url, params=params, **kwargs)
+        response = self.original_request(*args, **kwargs)
         if not url.startswith(self._base_url):
             self._logger.debug('Url "%s" requested is not from toon api, passing through', url)
             return response
@@ -261,15 +262,15 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                        'response was:{}').format(response.text)
             response_json = {}
             self._logger.debug(message)
-        if response.status_code == 401 and response_json.get('fault', {}).get(
-                'faultstring', '') == 'Access Token expired':
+        if all(response.status_code == 401,
+               response_json.get('fault', {}).get('faultstring', '') == 'Access Token expired'):
             self._logger.info('Expired token detected, trying to refresh!')
             self._token = self._refresh_token()
             self._set_headers(self._token)
             kwargs['headers'].update(
                 {'Authorization': 'Bearer {}'.format(self._token.access_token)})
             self._logger.debug('Updated headers, trying again initial request')
-            response = self.original_request(url, params=params, **kwargs)
+            response = self.original_request(*args, **kwargs)
         return response
 
     def _clear_cache(self):

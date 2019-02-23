@@ -31,3 +31,9 @@ History
 ------------------
 
 * Tyring to fix library playing well with synology under Home Assistant
+
+
+3.0.6 (23-02-2019)
+------------------
+
+* Fixed dumb bug 

@@ -43,3 +43,9 @@ History
 ------------------
 
 * re implemented named tuples for python 3.5 and fixed newly introduced bug with token expiry optimization.
+
+
+3.0.8 (24-02-2019)
+------------------
+
+* reverted dataclasses to namedtules for 3.5 compatibility

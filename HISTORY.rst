@@ -49,3 +49,9 @@ History
 ------------------
 
 * reverted dataclasses to namedtules for 3.5 compatibility
+
+
+3.0.9 (24-02-2019)
+------------------
+
+* removed unneeded dependency

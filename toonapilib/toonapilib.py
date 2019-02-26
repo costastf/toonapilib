@@ -501,6 +501,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         data = response.json()
         data["currentSetpoint"] = target
         data["activeState"] = -1
+        data["programState"] = -1
         response = requests.put(url,
                                 data=json.dumps(data),
                                 headers=self._headers)

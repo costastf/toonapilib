@@ -55,3 +55,9 @@ History
 ------------------
 
 * removed unneeded dependency
+
+
+3.0.10 (26-02-2019)
+-------------------
+
+* Disregards program if set to bypass race condition is setting the temperature while program is active

@@ -467,6 +467,8 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         url = '{api_url}/thermostat'.format(api_url=self._api_url)
         data = requests.get(url, headers=self._headers).json()
         data["activeState"] = id_
+        data["programState"] = 2
+        data["currentSetpoint"] = self.get_thermostat_state_by_id(id_).temperature
         response = requests.put(url,
                                 data=json.dumps(data),
                                 headers=self._headers)
@@ -501,7 +503,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         data = response.json()
         data["currentSetpoint"] = target
         data["activeState"] = -1
-        data["programState"] = -1
+        data["programState"] = 2
         response = requests.put(url,
                                 data=json.dumps(data),
                                 headers=self._headers)

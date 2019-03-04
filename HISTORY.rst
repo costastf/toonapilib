@@ -61,3 +61,9 @@ History
 -------------------
 
 * Disregards program if set to bypass race condition is setting the temperature while program is active
+
+
+3.0.11 (04-03-2019)
+-------------------
+
+* Fixed bug with thermostat state being unsettable with the contribution of John Van De Vrugt https://github.com/JohnvandeVrugt.

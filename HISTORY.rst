@@ -67,3 +67,9 @@ History
 -------------------
 
 * Fixed bug with thermostat state being unsettable with the contribution of John Van De Vrugt https://github.com/JohnvandeVrugt.
+
+
+3.1.0 (04-03-2019)
+------------------
+
+* Implemented data object under toon that exposes flow and graph rrd data for power and gas.

@@ -498,7 +498,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         url = '{api_url}/thermostat'.format(api_url=self._api_url)
         response = requests.get(url, headers=self._headers)
         if not response.ok:
-            self._logger.error(response.json)
+            self._logger.error(response.content)
             return
         data = response.json()
         data["currentSetpoint"] = target
@@ -508,7 +508,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                                 data=json.dumps(data),
                                 headers=self._headers)
         if not response.ok:
-            self._logger.error(response.json)
+            self._logger.error(response.content)
             return
         self._logger.debug('Response received {}'.format(response.content))
         self._clear_cache()
@@ -520,3 +520,44 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         :return: A float of the current temperature
         """
         return self.thermostat_info.current_displayed_temperature / 100.0
+
+    @property
+    def webhooks(self):
+        url = '{api_url}/webhooks'.format(api_url=self._api_url)
+        response = requests.get(url, headers=self._headers)
+        if not response.ok:
+            self._logger.error(response.content)
+            return []
+        self._logger.debug('Response received {}'.format(response.content))
+        return response.json()
+
+    def add_webhook(self,
+                    application_id,
+                    callback_url,
+                    customer_id,
+                    subscription_time,
+                    device_id,
+                    subscribed_actions):
+        url = '{api_url}/webhooks'.format(api_url=self._api_url)
+        payload = {"applicationId": application_id,
+                   "callbackUrl": callback_url,
+                   "customerId": customer_id,
+                   "subscriptionTime": subscription_time,
+                   "deviceid": device_id,
+                   "subscribedActions": subscribed_actions}
+        response = requests.post(url, data=payload, headers=self._headers)
+        if not response.ok:
+            self._logger.error(response.content)
+            return False
+        self._logger.debug('Response received {}'.format(response.content))
+        return True
+
+    def delete_webhook(self, application_id):
+        url = '{api_url}/webhooks/{application_id}'.format(api_url=self._api_url, application_id=application_id)
+        response = requests.delete(url,headers=self._headers)
+        if not response.ok:
+            self._logger.error(response.content)
+            return False
+        self._logger.debug('Response received {}'.format(response.content))
+        return True
+

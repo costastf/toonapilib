@@ -8,6 +8,7 @@ import logging
 from collections import namedtuple
 
 import requests
+import dateparser
 
 __author__ = '''Costas Tyfoxylos <costas.tyf@gmail.com>'''
 __docformat__ = 'plaintext'
@@ -16,6 +17,8 @@ __date__ = '''13-03-2017'''
 LOGGER_BASENAME = '''helpers'''
 LOGGER = logging.getLogger(LOGGER_BASENAME)
 LOGGER.addHandler(logging.NullHandler())
+
+ACCEPTED_INTERVAL = ['hours', 'days', 'weeks', 'months', 'years']
 
 Token = namedtuple('Token', ['access_token',
                              'refresh_token_expires_in',
@@ -84,6 +87,128 @@ SmokeDetector = namedtuple('SmokeDetector', ('device_uuid',
                                              'is_connected',
                                              'battery_level',
                                              'device_type'))
+
+
+class TimeWindowRetriever:  # pylint: disable=too-few-public-methods
+    """Object able to retrieve windows of time from endpoints"""
+
+    def __init__(self, toon_instance):
+        self.toon = toon_instance
+
+    def _retrieve_time_window(self, endpoint, from_datetime, to_datetime, interval='hours'):
+        if all([interval, interval not in ACCEPTED_INTERVAL]):
+            raise ValueError(('Invalid interval provided {interval}, '
+                              'accepted values are {valid}').format(interval=interval,
+                                                                    valid=ACCEPTED_INTERVAL))
+        payload = {'fromTime': int(dateparser.parse(from_datetime).timestamp() * 1000),
+                   'toTime': int(dateparser.parse(to_datetime).timestamp() * 1000)}
+        if interval:
+            payload['interval'] = interval
+        return self.toon._get_endpoint_data(endpoint, params=payload)  # pylint: disable=protected-access
+
+
+class Data:  # pylint: disable=too-few-public-methods
+    """Data object exposing flow and graph attributes."""
+
+    class Flow(TimeWindowRetriever):
+        """The object that exposes the flow information of categories in toon
+
+        The information is rrd metrics
+        """
+
+        def __init__(self, toon_instance):  # pylint: disable=useless-super-delegation
+            super().__init__(toon_instance)
+
+        def get_power_time_window(self, from_datetime, to_datetime):
+            """Retrieves the power flow for the provided time window
+
+            Args:
+                from_datetime (str): A string representing a date that dateparser can understand
+                to_datetime (str): A string representing a date that dateparser can understand
+
+            Returns:
+                rrd response if returned
+
+            """
+            endpoint = '/consumption/electricity/flows'
+            return self._retrieve_time_window(endpoint, from_datetime, to_datetime, interval=None)
+
+        def get_gas_time_window(self, from_datetime, to_datetime):
+            """Retrieves the gas flow for the provided time window
+
+            Args:
+                from_datetime (str): A string representing a date that dateparser can understand
+                to_datetime (str): A string representing a date that dateparser can understand
+
+            Returns:
+                rrd response if returned
+
+            """
+            endpoint = '/consumption/gas/flows'
+            return self._retrieve_time_window(endpoint, from_datetime, to_datetime, interval=None)
+
+    class Graph(TimeWindowRetriever):
+        """The object that exposes the graph information of categories in toon
+
+        The information is rrd metrics and the object dynamically handles the
+        accessing of attributes matching with the corresponding api endpoint
+        if they are know, raises an exception if not.
+        """
+
+        def __init__(self, toon_instance):  # pylint: disable=useless-super-delegation
+            super().__init__(toon_instance)
+
+        def get_power_time_window(self, from_datetime, to_datetime, interval='hours'):
+            """Retrieves the power graph for the provided time window
+
+            Args:
+                from_datetime (str): A string representing a date that dateparser can understand
+                to_datetime (str): A string representing a date that dateparser can understand
+                interval (str): A string representing the interval, one of ['hours', 'days', 'weeks', 'months', 'years']
+
+            Returns:
+                rrd response if returned
+
+            """
+            endpoint = '/consumption/electricity/data'
+            return self._retrieve_time_window(endpoint, from_datetime, to_datetime, interval=interval)
+
+        def get_gas_time_window(self, from_datetime, to_datetime, interval='hours'):
+            """Retrieves the gas graph for the provided time window
+
+            Args:
+                from_datetime (str): A string representing a date that dateparser can understand
+                to_datetime (str): A string representing a date that dateparser can understand
+                interval (str): A string representing the interval, one of ['hours', 'days', 'weeks', 'months', 'years']
+
+            Returns:
+                rrd response if returned
+
+            """
+            endpoint = '/consumption/gas/data'
+            return self._retrieve_time_window(endpoint, from_datetime, to_datetime, interval=interval)
+
+        def get_district_heat_time_window(self, from_datetime, to_datetime, interval='hours'):
+            """Retrieves the district heat graph for the provided time window
+
+            Args:
+                from_datetime (str): A string representing a date that dateparser can understand
+                to_datetime (str): A string representing a date that dateparser can understand
+                interval (str): A string representing the interval, one of ['hours', 'days', 'weeks', 'months', 'years']
+
+            Returns:
+                rrd response if returned
+
+            """
+            endpoint = '/consumption/districtheat/data'
+            return self._retrieve_time_window(endpoint, from_datetime, to_datetime, interval=interval)
+
+    def __init__(self, toon_instance):
+        logger_name = u'{base}.{suffix}'.format(base=LOGGER_BASENAME,
+                                                suffix=self.__class__.__name__)
+        self._logger = logging.getLogger(logger_name)
+        self.flow = self.Flow(toon_instance)
+        self.graph = self.Graph(toon_instance)
 
 
 class Switch:

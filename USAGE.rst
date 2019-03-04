@@ -242,3 +242,24 @@ Work with the thermostat
 
     # manually assign temperature to thermostat. This will override the thermostat state
     toon.thermostat = 20
+
+
+Exposing flow rrd metrics for for a requested time period
+
+.. code-block:: python
+
+    # Print default time period flow for power and gas
+    # from and to arguments can be anything that dateparser can understand. https://dateparser.readthedocs.io/en/latest/
+    print(toon.data.flow.get_power_time_window('2 months ago', '3 days ago'))
+    print(toon.data.flow.get_gas_time_window('22 nov 2018', '1 jan 2019'))
+
+
+Exposing graph rrd metrics for a requested time period
+
+.. code-block:: python
+
+    # Print default time period graph for power, gas and district_heat
+    # from and to arguments can be anything that dateparser can understand. https://dateparser.readthedocs.io/en/latest/
+    print(toon.data.graph.get_power_time_window('2 months ago', '3 days ago', 'weeks'))
+    print(toon.data.graph.get_gas_time_window('22 nov 2018', '1 jan 2019', 'days'))
+    print(toon.data.graph.get_district_heat_time_window('2 years ago', 'today', 'months'))

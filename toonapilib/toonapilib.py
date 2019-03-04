@@ -498,7 +498,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         url = '{api_url}/thermostat'.format(api_url=self._api_url)
         response = requests.get(url, headers=self._headers)
         if not response.ok:
-            self._logger.error(response.json)
+            self._logger.error(response.content)
             return
         data = response.json()
         data["currentSetpoint"] = target
@@ -508,7 +508,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                                 data=json.dumps(data),
                                 headers=self._headers)
         if not response.ok:
-            self._logger.error(response.json)
+            self._logger.error(response.content)
             return
         self._logger.debug('Response received {}'.format(response.content))
         self._clear_cache()

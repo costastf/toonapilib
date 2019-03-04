@@ -215,7 +215,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         response = requests.post(url, headers=headers, data=payload)
         tokens = response.json()
         self._logger.debug(tokens)
-        token_values = [tokens.get(key) for key in Token._fields]  # pylint: disable=no-member
+        token_values = [tokens.get(key) for key in Token._fields]
         if not all(token_values):
             self._logger.exception(response.content)
             raise InvalidConsumerSecret(response.text)

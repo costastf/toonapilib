@@ -73,3 +73,9 @@ History
 ------------------
 
 * Implemented data object under toon that exposes flow and graph rrd data for power and gas.
+
+
+3.2.0 (05-03-2019)
+------------------
+
+* Added capabilities to enable/disable thermostat program with the contribution of John Van De Vrugt https://github.com/JohnvandeVrugt.

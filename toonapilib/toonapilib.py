@@ -528,6 +528,29 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         self._clear_cache()
 
     @property
+    def thermostat_program_state(self):
+        """The active program state of the thermostat.
+
+        :return: the program state
+        """
+        return self.thermostat_info.program_state
+
+    @thermostat_program_state.setter
+    def thermostat_program_state(self, program_state):
+        """Changes the thermostat program state to the one passed as an argument
+
+        :param name: The program state to change to.
+        """
+        url = '{api_url}/thermostat'.format(api_url=self._api_url)
+        data = requests.get(url, headers=self._headers).json()
+        data["programState"] = program_state
+        response = requests.put(url,
+                                data=json.dumps(data),
+                                headers=self._headers)
+        self._logger.debug('Response received {}'.format(response.content))
+        self._clear_cache()
+
+    @property
     def temperature(self):
         """The current actual temperature as perceived by toon.
 

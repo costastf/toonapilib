@@ -48,13 +48,15 @@ from .helpers import (Agreement,
                       ThermostatInfo,
                       ThermostatState,
                       Token,
-                      Usage)
+                      Usage,
+                      Data)
 from .toonapilibexceptions import (InvalidCredentials,
                                    InvalidThermostatState,
                                    InvalidConsumerKey,
                                    InvalidConsumerSecret,
                                    IncompleteStatus,
                                    AgreementsRetrievalError)
+
 coloredlogs.auto_install()
 
 __author__ = '''Costas Tyfoxylos <costas.tyf@gmail.com>'''
@@ -67,13 +69,13 @@ __maintainer__ = '''Costas Tyfoxylos'''
 __email__ = '''<costas.tyf@gmail.com>'''
 __status__ = '''Development'''  # "Prototype", "Development", "Production".
 
-
 # This is the main prefix used for logging
 LOGGER_BASENAME = '''toonapilib'''
 LOGGER = logging.getLogger(LOGGER_BASENAME)
 LOGGER.addHandler(logging.NullHandler())
 
 STATE_CACHE = TTLCache(maxsize=1, ttl=STATE_CACHING_SECONDS)
+EXPIRED_TOKEN_FAULT_STRING = 'Access Token expired'
 
 
 class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -100,6 +102,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         self.agreement = None
         self._headers = None
         self._token = None
+        self.data = Data(self)
         self._authenticate()
         if display_common_name:
             self.enable_by_display_common_name(display_common_name)
@@ -262,8 +265,8 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                        'response was:{}').format(response.text)
             response_json = {}
             self._logger.debug(message)
-        if response.status_code == 401 and response_json.get('fault', {}).get(
-                'faultstring', '') == 'Access Token expired':
+        if response.status_code == 401 and \
+                response_json.get('fault', {}).get('faultstring', '') == EXPIRED_TOKEN_FAULT_STRING:
             self._logger.info('Expired token detected, trying to refresh!')
             self._token = self._refresh_token()
             self._set_headers(self._token)
@@ -276,6 +279,17 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
     def _clear_cache(self):
         self._logger.debug('Clearing state cache.')
         STATE_CACHE.clear()
+
+    def _get_endpoint_data(self, endpoint, params=None):
+        url = '{base}{endpoint}'.format(base=self._api_url,
+                                        endpoint=endpoint)
+
+        response = requests.get(url, params=params, headers=self._headers)
+        if not response.ok:
+            self._logger.error(response.content)
+            return {}
+        self._logger.debug('Response received {}'.format(response.content))
+        return response.json()
 
     @property
     def smokedetectors(self):

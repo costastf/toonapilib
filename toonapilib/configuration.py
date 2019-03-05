@@ -18,3 +18,7 @@ BURNER_STATES = {0: 'off',
                  1: 'on',
                  2: 'water_heating',
                  3: 'pre_heating'}
+
+PROGRAM_STATES = {0: 'off',
+                  1: 'on',
+                  2: 'manual'}

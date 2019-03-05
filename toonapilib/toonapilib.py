@@ -38,7 +38,7 @@ import requests
 import coloredlogs
 from cachetools import TTLCache, cached
 
-from .configuration import STATES, STATE_CACHING_SECONDS, BURNER_STATES
+from .configuration import STATES, STATE_CACHING_SECONDS, BURNER_STATES, PROGRAM_STATES
 from .helpers import (Agreement,
                       Light,
                       PowerUsage,
@@ -524,6 +524,31 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         if not response.ok:
             self._logger.error(response.content)
             return
+        self._logger.debug('Response received {}'.format(response.content))
+        self._clear_cache()
+
+    @property
+    def program_state(self):
+        """The active program state of the thermostat.
+
+        :return: the program state
+        """
+        return PROGRAM_STATES.get(int(self.thermostat_info.program_state))
+
+    @program_state.setter
+    def program_state(self, name):
+        """Changes the thermostat program state to the one passed as an argument
+
+        :param name: The program state to change to.
+        """
+        id_ = next((id_ for id_, state in PROGRAM_STATES.items()
+                    if state.lower() == name.lower()), None)
+        url = '{api_url}/thermostat'.format(api_url=self._api_url)
+        data = requests.get(url, headers=self._headers).json()
+        data["programState"] = id_
+        response = requests.put(url,
+                                data=json.dumps(data),
+                                headers=self._headers)
         self._logger.debug('Response received {}'.format(response.content))
         self._clear_cache()
 

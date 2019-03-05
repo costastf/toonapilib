@@ -55,7 +55,11 @@ class InvalidCredentials(Exception):
 
 
 class InvalidThermostatState(Exception):
-    """Vital information is missing from the response"""
+    """The state provided to the thermostat is not a valid one"""
+
+
+class InvalidProgramState(Exception):
+    """The state provided to the program is not a valid one"""
 
 
 class IncompleteStatus(Exception):

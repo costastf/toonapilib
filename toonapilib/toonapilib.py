@@ -52,6 +52,7 @@ from .helpers import (Agreement,
                       Data)
 from .toonapilibexceptions import (InvalidCredentials,
                                    InvalidThermostatState,
+                                   InvalidProgramState,
                                    InvalidConsumerKey,
                                    InvalidConsumerSecret,
                                    IncompleteStatus,
@@ -543,6 +544,8 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         """
         id_ = next((id_ for id_, state in PROGRAM_STATES.items()
                     if state.lower() == name.lower()), None)
+        if id_ is None:
+            raise InvalidProgramState(name)
         url = '{api_url}/thermostat'.format(api_url=self._api_url)
         data = requests.get(url, headers=self._headers).json()
         data["programState"] = id_

@@ -34,6 +34,7 @@ Import all parts from toonapilib here
 from ._version import __version__
 from .toonapilibexceptions import (InvalidCredentials,
                                    InvalidThermostatState,
+                                   InvalidProgramState,
                                    InvalidConsumerKey,
                                    InvalidConsumerSecret,
                                    IncompleteStatus,
@@ -60,6 +61,7 @@ assert Toon
 assert InvalidConsumerKey
 assert InvalidConsumerSecret
 assert InvalidThermostatState
+assert InvalidProgramState
 assert InvalidCredentials
 assert IncompleteStatus
 assert AgreementsRetrievalError

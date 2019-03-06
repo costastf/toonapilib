@@ -79,3 +79,9 @@ History
 ------------------
 
 * Added capabilities to enable/disable thermostat program with the contribution of John Van De Vrugt https://github.com/JohnvandeVrugt.
+
+
+3.2.1 (06-03-2019)
+------------------
+
+* Fixed missplaced files in the root of the virtual environment

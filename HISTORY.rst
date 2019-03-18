@@ -85,3 +85,9 @@ History
 ------------------
 
 * Fixed missplaced files in the root of the virtual environment
+
+
+3.2.2 (18-03-2019)
+------------------
+
+* Changed caching from 30 seconds to 300 seconds due to rate limiting

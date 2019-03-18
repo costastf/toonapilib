@@ -4,7 +4,7 @@
 """A place to store the configuration."""
 
 
-STATE_CACHING_SECONDS = 30
+STATE_CACHING_SECONDS = 300
 REQUEST_TIMEOUT = 9
 
 STATES = {0: 'Comfort',

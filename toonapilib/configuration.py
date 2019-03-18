@@ -5,7 +5,6 @@
 
 
 STATE_CACHING_SECONDS = 300
-REQUEST_TIMEOUT = 9
 
 STATES = {0: 'Comfort',
           1: 'Home',

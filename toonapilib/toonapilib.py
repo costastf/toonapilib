@@ -152,6 +152,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         self._token = self._get_token(code)
         self._set_headers(self._token)
         self._get_agreements()
+        self._update_headers()
         self._api_url = '{}/toon/v3/{}'.format(self._base_url,
                                                self.agreement.id)
 
@@ -159,6 +160,10 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         self._headers = {'Authorization': 'Bearer {}'.format(token.access_token),
                          'content-type': 'application/json',
                          'cache-control': 'no-cache'}
+
+    def _update_headers(self):
+        self._headers.update({'X-Common-Name': self.agreement.display_common_name,
+                              'X-Agreement-ID': self.agreement.id})
 
     def _get_agreements(self):
         url = '{base_url}/toon/v3/agreements'.format(base_url=self._base_url)
@@ -273,6 +278,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
             self._set_headers(self._token)
             kwargs['headers'].update(
                 {'Authorization': 'Bearer {}'.format(self._token.access_token)})
+            self._update_headers()
             self._logger.debug('Updated headers, trying again initial request')
             response = self.original_request(*args, **kwargs)
         return response

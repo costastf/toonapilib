@@ -91,3 +91,9 @@ History
 ------------------
 
 * Changed caching from 30 seconds to 300 seconds due to rate limiting
+
+
+3.2.3 (11-04-2019)
+------------------
+
+* Updating headers according to the upcoming change from Quby

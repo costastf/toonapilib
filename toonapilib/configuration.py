@@ -5,6 +5,7 @@
 
 
 STATE_CACHING_SECONDS = 300
+THERMOSTAT_STATE_CACHING_SECONDS = 3600
 
 STATES = {0: 'Comfort',
           1: 'Home',

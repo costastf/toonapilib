@@ -38,7 +38,8 @@ import requests
 import coloredlogs
 from cachetools import TTLCache, cached
 
-from .configuration import STATES, STATE_CACHING_SECONDS, BURNER_STATES, PROGRAM_STATES
+from .configuration import STATES, STATE_CACHING_SECONDS, THERMOSTAT_STATE_CACHING_SECONDS, BURNER_STATES, \
+    PROGRAM_STATES
 from .helpers import (Agreement,
                       Light,
                       PowerUsage,
@@ -76,6 +77,8 @@ LOGGER = logging.getLogger(LOGGER_BASENAME)
 LOGGER.addHandler(logging.NullHandler())
 
 STATE_CACHE = TTLCache(maxsize=1, ttl=STATE_CACHING_SECONDS)
+THERMOSTAT_STATE_CACHE = TTLCache(maxsize=1, ttl=THERMOSTAT_STATE_CACHING_SECONDS)
+
 EXPIRED_TOKEN_FAULT_STRING = 'Access Token expired'
 
 
@@ -237,7 +240,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
     @property
     @cached(STATE_CACHE)
     def status(self):
-        """The status of toon, cached for 30 seconds"""
+        """The status of toon, cached for 300 seconds"""
         url = ('{base_url}/toon/v3/'
                '{agreement_id}/status').format(base_url=self._base_url,
                                                agreement_id=self.agreement.id)
@@ -252,6 +255,30 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
             self._logger.debug('No json on response :%s', response.text)
             raise IncompleteStatus
         return data
+
+    @property
+    @cached(THERMOSTAT_STATE_CACHE)
+    def thermostat_states(self):
+        """The thermostat states of toon, cached for 1 hour"""
+        url = ('{base_url}/toon/v3/'
+               '{agreement_id}/thermostat/states').format(base_url=self._base_url,
+                                                          agreement_id=self.agreement.id)
+        response = requests.get(url, headers=self._headers)
+        if response.status_code == 202:
+            self._logger.debug('Response accepted but no data yet, '
+                               'trying one more time...')
+        response = requests.get(url, headers=self._headers)
+        try:
+            states = response.json().get('state', [])
+        except ValueError:
+            self._logger.debug('No json on response :%s', response.text)
+            raise IncompleteStatus
+
+        return [ThermostatState(STATES[state.get('id')],
+                                state.get('id'),
+                                state.get('tempValue'),
+                                state.get('dhw'))
+                for state in states]
 
     def _monkey_patch_requests(self):
         self.original_request = requests.get  # pylint: disable=attribute-defined-outside-init
@@ -417,16 +444,6 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                               info.get('otCommError'),
                               info.get('programState'),
                               info.get('realSetpoint'))
-
-    @property
-    def thermostat_states(self):
-        """:return: A list of thermostatstate object modeled as named tuples"""
-        states = self._get_status_value('thermostatStates').get('state', [])
-        return [ThermostatState(STATES[state.get('id')],
-                                state.get('id'),
-                                state.get('tempValue'),
-                                state.get('dhw'))
-                for state in states]
 
     def get_thermostat_state_by_name(self, name):
         """Retrieves a thermostat state object by its assigned name

@@ -97,3 +97,9 @@ History
 ------------------
 
 * Updating headers according to the upcoming change from Quby
+
+
+3.2.4 (10-06-2019)
+------------------
+
+* Accepted fix from Reinder Reinders ("reinder83") for thermostat states new api endpoint that sometimes is missing from the status response.

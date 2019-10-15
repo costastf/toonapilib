@@ -91,7 +91,8 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                  consumer_key,
                  consumer_secret,
                  tenant_id='eneco',
-                 display_common_name=None):
+                 display_common_name=None,
+                 long_lived_access_token=None):
         logger_name = u'{base}.{suffix}'.format(base=LOGGER_BASENAME,
                                                 suffix=self.__class__.__name__)
         self._logger = logging.getLogger(logger_name)
@@ -99,6 +100,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         self._api_url = None
         self._username = eneco_username
         self._password = eneco_password
+        self._long_lived_access_token = long_lived_access_token
         self._client_id = consumer_key
         self._client_secret = consumer_secret
         self._tenant_id = tenant_id
@@ -151,8 +153,11 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     def _authenticate(self):
         self._monkey_patch_requests()
-        code = self._get_challenge_code()
-        self._token = self._get_token(code)
+        if self._long_lived_access_token:
+            self._token = self._long_lived_access_token
+        else:
+            code = self._get_challenge_code()
+            self._token = self._get_token(code)
         self._set_headers(self._token)
         self._get_agreements()
         self._update_headers()
@@ -301,12 +306,13 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         if response.status_code == 401 and \
                 response_json.get('fault', {}).get('faultstring', '') == EXPIRED_TOKEN_FAULT_STRING:
             self._logger.info('Expired token detected, trying to refresh!')
-            self._token = self._refresh_token()
-            self._set_headers(self._token)
-            kwargs['headers'].update(
-                {'Authorization': 'Bearer {}'.format(self._token.access_token)})
-            self._update_headers()
-            self._logger.debug('Updated headers, trying again initial request')
+            if not self._long_lived_access_token:
+                self._token = self._refresh_token()
+                self._set_headers(self._token)
+                kwargs['headers'].update(
+                    {'Authorization': 'Bearer {}'.format(self._token.access_token)})
+                self._update_headers()
+                self._logger.debug('Updated headers, trying again initial request')
             response = self.original_request(*args, **kwargs)
         return response
 

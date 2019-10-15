@@ -48,6 +48,17 @@ To use toonapilib in a project:
     toon = Toon(eneco_username, eneco_password, consumer_key, consumer_secret)
 
 
+To use toonapilib in a project with long lived access token generated from https://api.toon.eu/toonapi-accesstoken?tenant_id=eneco&client_id='CONSUMER_KEY_FROM_API_REGISTRATION'
+
+.. code-block:: python
+
+    from toonapilib import Toon
+
+    long_lived_access_token = 'XXX'
+
+    toon = Toon(None, None, None, None, long_lived_access_token=long_lived_access_token)
+
+
 
 Print information about the agreement. Attributes are self explanatory.
 

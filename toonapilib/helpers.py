@@ -1,7 +1,28 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 # File: helpers.py
-"""All helper objects will live here"""
+#
+# Copyright 2017 Costas Tyfoxylos
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+#  of this software and associated documentation files (the "Software"), to
+#  deal in the Software without restriction, including without limitation the
+#  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+#  sell copies of the Software, and to permit persons to whom the Software is
+#  furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+#  all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+#  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+#  DEALINGS IN THE SOFTWARE.
+#
+"""All helper objects will live here."""
 
 import json
 import logging
@@ -90,7 +111,7 @@ SmokeDetector = namedtuple('SmokeDetector', ('device_uuid',
 
 
 class TimeWindowRetriever:  # pylint: disable=too-few-public-methods
-    """Object able to retrieve windows of time from endpoints"""
+    """Object able to retrieve windows of time from endpoints."""
 
     def __init__(self, toon_instance):
         self.toon = toon_instance
@@ -111,7 +132,7 @@ class Data:  # pylint: disable=too-few-public-methods
     """Data object exposing flow and graph attributes."""
 
     class Flow(TimeWindowRetriever):
-        """The object that exposes the flow information of categories in toon
+        """The object that exposes the flow information of categories in toon.
 
         The information is rrd metrics
         """
@@ -120,7 +141,7 @@ class Data:  # pylint: disable=too-few-public-methods
             super().__init__(toon_instance)
 
         def get_power_time_window(self, from_datetime, to_datetime):
-            """Retrieves the power flow for the provided time window
+            """Retrieves the power flow for the provided time window.
 
             Args:
                 from_datetime (str): A string representing a date that dateparser can understand
@@ -134,7 +155,7 @@ class Data:  # pylint: disable=too-few-public-methods
             return self._retrieve_time_window(endpoint, from_datetime, to_datetime, interval=None)
 
         def get_gas_time_window(self, from_datetime, to_datetime):
-            """Retrieves the gas flow for the provided time window
+            """Retrieves the gas flow for the provided time window.
 
             Args:
                 from_datetime (str): A string representing a date that dateparser can understand
@@ -148,7 +169,7 @@ class Data:  # pylint: disable=too-few-public-methods
             return self._retrieve_time_window(endpoint, from_datetime, to_datetime, interval=None)
 
     class Graph(TimeWindowRetriever):
-        """The object that exposes the graph information of categories in toon
+        """The object that exposes the graph information of categories in toon.
 
         The information is rrd metrics and the object dynamically handles the
         accessing of attributes matching with the corresponding api endpoint
@@ -159,7 +180,7 @@ class Data:  # pylint: disable=too-few-public-methods
             super().__init__(toon_instance)
 
         def get_power_time_window(self, from_datetime, to_datetime, interval='hours'):
-            """Retrieves the power graph for the provided time window
+            """Retrieves the power graph for the provided time window.
 
             Args:
                 from_datetime (str): A string representing a date that dateparser can understand
@@ -174,7 +195,7 @@ class Data:  # pylint: disable=too-few-public-methods
             return self._retrieve_time_window(endpoint, from_datetime, to_datetime, interval=interval)
 
         def get_gas_time_window(self, from_datetime, to_datetime, interval='hours'):
-            """Retrieves the gas graph for the provided time window
+            """Retrieves the gas graph for the provided time window.
 
             Args:
                 from_datetime (str): A string representing a date that dateparser can understand
@@ -189,7 +210,7 @@ class Data:  # pylint: disable=too-few-public-methods
             return self._retrieve_time_window(endpoint, from_datetime, to_datetime, interval=interval)
 
         def get_district_heat_time_window(self, from_datetime, to_datetime, interval='hours'):
-            """Retrieves the district heat graph for the provided time window
+            """Retrieves the district heat graph for the provided time window.
 
             Args:
                 from_datetime (str): A string representing a date that dateparser can understand
@@ -212,7 +233,7 @@ class Data:  # pylint: disable=too-few-public-methods
 
 
 class Switch:
-    """Core object to implement the turning on, off or toggle
+    """Core object to implement the turning on, off or toggle.
 
     Both hue lamps and fibaro plugs have a switch component that is shared.
     This implements that usage.
@@ -231,7 +252,7 @@ class Switch:
 
     @property
     def name(self):
-        """The name of the device"""
+        """The name of the device."""
         return self._name
 
     def _get_value(self, name, config=False):
@@ -241,16 +262,16 @@ class Switch:
                      if item.get('name') == self.name), None)
 
     def toggle(self):
-        """Toggles the status of the device"""
+        """Toggles the status of the device."""
         return self._change_state(not self.current_state)
 
     def turn_on(self):
-        """Turns the device on"""
+        """Turns the device on."""
         return self._change_state(1)
 
     @property
     def status(self):
-        """Returns the status of the device in a human friendly way"""
+        """Returns the status of the device in a human friendly way."""
         return 'on' if self.current_state else 'off'
 
     def _change_state(self, state):
@@ -272,66 +293,66 @@ class Switch:
 
     @property
     def can_toggle(self):
-        """Boolean about the capability of the device to toggle state"""
+        """Boolean about the capability of the device to toggle state."""
         return False if not self.is_connected or self.is_locked else True
 
     def turn_off(self):
-        """Turns the device off"""
+        """Turns the device off."""
         return self._change_state(0)
 
     @property
     def device_uuid(self):
-        """The uuid of the device"""
+        """The uuid of the device."""
         if not self._device_uuid:
             self._device_uuid = self._get_value('devUUID')
         return self._device_uuid
 
     @property
     def is_connected(self):
-        """Boolean about the connection status of the device"""
+        """Boolean about the connection status of the device."""
         value = self._get_value('isConnected')
         return True if value else False
 
     @property
     def current_state(self):
-        """The device's current state"""
+        """The device's current state."""
         return self._get_value('currentState')
 
     @property
     def device_type(self):
-        """The type of the device"""
+        """The type of the device."""
         if not self._device_type:
             self._device_type = self._get_value('devType', config=True)
         return self._device_type
 
     @property
     def in_switch_all_group(self):
-        """Boolean about whether the device is in a switch group"""
+        """Boolean about whether the device is in a switch group."""
         value = self._get_value('inSwitchAll', config=True)
         return True if value else False
 
     @property
     def in_switch_schedule(self):
-        """Boolean about whether the device is in a switch schedule"""
+        """Boolean about whether the device is in a switch schedule."""
         value = self._get_value('inSwitchSchedule', config=True)
         return True if value else False
 
     @property
     def zwave_index(self):
-        """The zwave index of the device"""
+        """The zwave index of the device."""
         if not self._zwave_index:
             self._zwave_index = self._get_value('position', config=True)
         return self._zwave_index
 
     @property
     def is_locked(self):
-        """Boolean about the lock state of the object"""
+        """Boolean about the lock state of the object."""
         value = self._get_value('switchLocked', config=True)
         return True if value else False
 
     @property
     def zwave_uuid(self):
-        """The zwave uuid"""
+        """The zwave uuid."""
         if not self._zwave_uuid:
             self._zwave_uuid = self._get_value('zwUuid', config=True)
         return self._zwave_uuid
@@ -350,27 +371,27 @@ class SmartPlug(Switch):
 
     @property
     def average_usage(self):
-        """The average power usage"""
+        """The average power usage."""
         return self._get_value('avgUsage') if self.usage_capable else 0
 
     @property
     def current_usage(self):
-        """The current power usage"""
+        """The current power usage."""
         return self._get_value('currentUsage') if self.usage_capable else 0
 
     @property
     def daily_usage(self):
-        """The daily power usage"""
+        """The daily power usage."""
         return self._get_value('dayUsage') if self.usage_capable else 0
 
     @property
     def network_health_state(self):
-        """The state of the network health"""
+        """The state of the network health."""
         return self._get_value('networkHealthState')
 
     @property
     def usage_capable(self):
-        """Boolean about the capability of the device to report power usage"""
+        """Boolean about the capability of the device to report power usage."""
         if self._usage_capable is None:
             value = self._get_value('usageCapable', config=True)
             self._usage_capable = True if value else False
@@ -378,12 +399,12 @@ class SmartPlug(Switch):
 
     @property
     def quantity_graph_uuid(self):
-        """The uuid of the quantity graph"""
+        """The uuid of the quantity graph."""
         return self._get_value('quantityGraphUuid', config=True)
 
     @property
     def flow_graph_uuid(self):
-        """The uuid of the flow graph"""
+        """The uuid of the flow graph."""
         return self._get_value('flowGraphUuid', config=True)
 
 
@@ -396,5 +417,5 @@ class Light(Switch):
 
     @property
     def rgb_color(self):
-        """The rgb color value of the light"""
+        """The rgb color value of the light."""
         return self._get_value('rgbColor')

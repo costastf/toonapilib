@@ -24,7 +24,7 @@
 #
 
 """
-Main code for toonapilib
+Main code for toonapilib.
 
 .. _Google Python Style Guide:
    http://google.github.io/styleguide/pyguide.html
@@ -38,8 +38,11 @@ import requests
 import coloredlogs
 from cachetools import TTLCache, cached
 
-from .configuration import STATES, STATE_CACHING_SECONDS, THERMOSTAT_STATE_CACHING_SECONDS, BURNER_STATES, \
-    PROGRAM_STATES
+from .configuration import (STATES,
+                            STATE_CACHING_SECONDS,
+                            THERMOSTAT_STATE_CACHING_SECONDS,
+                            BURNER_STATES,
+                            PROGRAM_STATES)
 from .helpers import (Agreement,
                       Light,
                       PowerUsage,
@@ -113,7 +116,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def display_names(self):
-        """The ids of all the agreements
+        """The ids of all the agreements.
 
         Returns:
             list: A list of the agreement ids.
@@ -128,7 +131,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                   'redirect_uri': 'http://127.0.0.1',
                   'client_id': self._client_id}
         # it seems to be required to GET the url before submitting data
-        _ = requests.get(url, params=params)
+        _ = self._authenticated_get(url, params=params)
         del _
         post_url = '{url}/legacy'.format(url=url)
         payload = {'username': self._username,
@@ -150,7 +153,6 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         return code
 
     def _authenticate(self):
-        self._monkey_patch_requests()
         code = self._get_challenge_code()
         self._token = self._get_token(code)
         self._set_headers(self._token)
@@ -170,7 +172,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     def _get_agreements(self):
         url = '{base_url}/toon/v3/agreements'.format(base_url=self._base_url)
-        response = requests.get(url, headers=self._headers)
+        response = self._authenticated_get(url, headers=self._headers)
         try:
             agreements = response.json()
             self.agreements = [Agreement(agreement.get('agreementId'),
@@ -188,7 +190,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         self.agreement = self.agreements[0]
 
     def enable_by_display_common_name(self, display_common_name):
-        """Enables an agreement by it's display common name
+        """Enables an agreement by it's display common name.
 
         Args:
             display_common_name: The display common name of the agreement to enable
@@ -240,15 +242,15 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
     @property
     @cached(STATE_CACHE)
     def status(self):
-        """The status of toon, cached for 300 seconds"""
+        """The status of toon, cached for 300 seconds."""
         url = ('{base_url}/toon/v3/'
                '{agreement_id}/status').format(base_url=self._base_url,
                                                agreement_id=self.agreement.id)
-        response = requests.get(url, headers=self._headers)
+        response = self._authenticated_get(url, headers=self._headers)
         if response.status_code == 202:
             self._logger.debug('Response accepted but no data yet, '
                                'trying one more time...')
-        response = requests.get(url, headers=self._headers)
+        response = self._authenticated_get(url, headers=self._headers)
         try:
             data = response.json()
         except ValueError:
@@ -259,15 +261,15 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
     @property
     @cached(THERMOSTAT_STATE_CACHE)
     def thermostat_states(self):
-        """The thermostat states of toon, cached for 1 hour"""
+        """The thermostat states of toon, cached for 1 hour."""
         url = ('{base_url}/toon/v3/'
                '{agreement_id}/thermostat/states').format(base_url=self._base_url,
                                                           agreement_id=self.agreement.id)
-        response = requests.get(url, headers=self._headers)
+        response = self._authenticated_get(url, headers=self._headers)
         if response.status_code == 202:
             self._logger.debug('Response accepted but no data yet, '
                                'trying one more time...')
-        response = requests.get(url, headers=self._headers)
+        response = self._authenticated_get(url, headers=self._headers)
         try:
             states = response.json().get('state', [])
         except ValueError:
@@ -280,17 +282,10 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                                 state.get('dhw'))
                 for state in states]
 
-    def _monkey_patch_requests(self):
-        self.original_request = requests.get  # pylint: disable=attribute-defined-outside-init
-        requests.get = self._patched_request
-
-    def _patched_request(self, *args, **kwargs):
+    def _authenticated_get(self, *args, **kwargs):
         url = args[0]
         self._logger.debug('Using patched request for url %s', url)
-        response = self.original_request(*args, **kwargs)
-        if not url.startswith(self._base_url):
-            self._logger.debug('Url "%s" requested is not from toon api, passing through', url)
-            return response
+        response = requests.get(*args, **kwargs)
         try:
             response_json = response.json()
         except ValueError:
@@ -307,7 +302,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                 {'Authorization': 'Bearer {}'.format(self._token.access_token)})
             self._update_headers()
             self._logger.debug('Updated headers, trying again initial request')
-            response = self.original_request(*args, **kwargs)
+            response = requests.get(*args, **kwargs)
         return response
 
     def _clear_cache(self):
@@ -318,7 +313,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         url = '{base}{endpoint}'.format(base=self._api_url,
                                         endpoint=endpoint)
 
-        response = requests.get(url, params=params, headers=self._headers)
+        response = self._authenticated_get(url, params=params, headers=self._headers)
         if not response.ok:
             self._logger.error(response.content)
             return {}
@@ -327,7 +322,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def smokedetectors(self):
-        """:return: A list of smokedetector objects modeled as named tuples"""
+        """:return: A list of smokedetector objects modeled as named tuples."""
         return [SmokeDetector(smokedetector.get('devUuid'),
                               smokedetector.get('name'),
                               smokedetector.get('lastConnectedChange'),
@@ -338,7 +333,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                                                      {}).get('device', [])]
 
     def get_smokedetector_by_name(self, name):
-        """Retrieves a smokedetector object by its name
+        """Retrieves a smokedetector object by its name.
 
         :param name: The name of the smokedetector to return
         :return: A smokedetector object
@@ -348,14 +343,14 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def lights(self):
-        """:return: A list of light objects"""
+        """:return: A list of light objects."""
         return [Light(self, light.get('name'))
                 for light in self.status.get('deviceStatusInfo',
                                              {}).get('device', [])
                 if light.get('rgbColor')]
 
     def get_light_by_name(self, name):
-        """Retrieves a light object by its name
+        """Retrieves a light object by its name.
 
         :param name: The name of the light to return
         :return: A light object
@@ -372,7 +367,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                 if plug.get('networkHealthState')]
 
     def get_smartplug_by_name(self, name):
-        """Retrieves a smartplug object by its name
+        """Retrieves a smartplug object by its name.
 
         :param name: The name of the smartplug to return
         :return: A smartplug object
@@ -389,7 +384,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def gas(self):
-        """:return: A gas object modeled as a named tuple"""
+        """:return: A gas object modeled as a named tuple."""
         usage = self._get_status_value('gasUsage')
         return Usage(usage.get('avgDayValue'),
                      usage.get('avgValue'),
@@ -401,7 +396,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def power(self):
-        """:return: A power object modeled as a named tuple"""
+        """:return: A power object modeled as a named tuple."""
         power = self._get_status_value('powerUsage')
         return PowerUsage(power.get('avgDayValue'),
                           power.get('avgValue'),
@@ -415,7 +410,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def solar(self):
-        """:return: A solar object modeled as a named tuple"""
+        """:return: A solar object modeled as a named tuple."""
         power = self._get_status_value('powerUsage')
         return Solar(power.get('maxSolar'),
                      power.get('valueProduced'),
@@ -427,7 +422,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def thermostat_info(self):
-        """:return: A thermostatinfo object modeled as a named tuple"""
+        """:return: A thermostatinfo object modeled as a named tuple."""
         info = self._get_status_value('thermostatInfo')
         return ThermostatInfo(info.get('activeState'),
                               info.get('boilerModuleConnected'),
@@ -446,7 +441,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                               info.get('realSetpoint'))
 
     def get_thermostat_state_by_name(self, name):
-        """Retrieves a thermostat state object by its assigned name
+        """Retrieves a thermostat state object by its assigned name.
 
         :param name: The name of the thermostat state
         :return: The thermostat state object
@@ -456,7 +451,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                      if state.name.lower() == name.lower()), None)
 
     def get_thermostat_state_by_id(self, id_):
-        """Retrieves a thermostat state object by its id
+        """Retrieves a thermostat state object by its id.
 
         :param id_: The id of the thermostat state
         :return: The thermostat state object
@@ -466,7 +461,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def burner_on(self):
-        """Boolean value of the state of the burner"""
+        """Boolean value of the state of the burner."""
         return True if int(self.thermostat_info.burner_info) else False
 
     @property
@@ -482,7 +477,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def thermostat_state(self):
-        """The state of the thermostat programming
+        """The state of the thermostat programming.
 
         :return: A thermostat state object of the current setting
         """
@@ -495,7 +490,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @thermostat_state.setter
     def thermostat_state(self, name):
-        """Changes the thermostat state to the one passed as an argument
+        """Changes the thermostat state to the one passed as an argument.
 
         :param name: The name of the thermostat state to change to.
         """
@@ -503,7 +498,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         id_ = next((id_ for id_, state in STATES.items()
                     if state.lower() == name.lower()), None)
         url = '{api_url}/thermostat'.format(api_url=self._api_url)
-        data = requests.get(url, headers=self._headers).json()
+        data = self._authenticated_get(url, headers=self._headers).json()
         data["activeState"] = id_
         data["programState"] = 2
         data["currentSetpoint"] = self.get_thermostat_state_by_id(id_).temperature
@@ -515,7 +510,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def thermostat(self):
-        """The current setting of the thermostat as temperature
+        """The current setting of the thermostat as temperature.
 
         :return: A float of the current setting of the temperature of the
         thermostat
@@ -534,7 +529,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
             self._logger.error('Please supply a valid temperature e.g: 20')
             return
         url = '{api_url}/thermostat'.format(api_url=self._api_url)
-        response = requests.get(url, headers=self._headers)
+        response = self._authenticated_get(url, headers=self._headers)
         if not response.ok:
             self._logger.error(response.content)
             return
@@ -561,7 +556,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @program_state.setter
     def program_state(self, name):
-        """Changes the thermostat program state to the one passed as an argument
+        """Changes the thermostat program state to the one passed as an argument.
 
         :param name: The program state to change to.
         """
@@ -570,7 +565,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         if id_ is None:
             raise InvalidProgramState(name)
         url = '{api_url}/thermostat'.format(api_url=self._api_url)
-        data = requests.get(url, headers=self._headers).json()
+        data = self._authenticated_get(url, headers=self._headers).json()
         data["programState"] = id_
         response = requests.put(url,
                                 data=json.dumps(data),

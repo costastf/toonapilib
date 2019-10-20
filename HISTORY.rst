@@ -103,3 +103,11 @@ History
 ------------------
 
 * Accepted fix from Reinder Reinders ("reinder83") for thermostat states new api endpoint that sometimes is missing from the status response.
+
+
+3.2.5 (20-10-2019)
+------------------
+
+* Removed monkey patching of requests and implemented explicit handling of re authentication.
+* Updated tempalate and bumped dependencies.
+* Linted.

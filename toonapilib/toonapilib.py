@@ -24,7 +24,7 @@
 #
 
 """
-Main code for toonapilib
+Main code for toonapilib.
 
 .. _Google Python Style Guide:
    http://google.github.io/styleguide/pyguide.html
@@ -116,7 +116,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def display_names(self):
-        """The ids of all the agreements
+        """The ids of all the agreements.
 
         Returns:
             list: A list of the agreement ids.
@@ -190,7 +190,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         self.agreement = self.agreements[0]
 
     def enable_by_display_common_name(self, display_common_name):
-        """Enables an agreement by it's display common name
+        """Enables an agreement by it's display common name.
 
         Args:
             display_common_name: The display common name of the agreement to enable
@@ -242,7 +242,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
     @property
     @cached(STATE_CACHE)
     def status(self):
-        """The status of toon, cached for 300 seconds"""
+        """The status of toon, cached for 300 seconds."""
         url = ('{base_url}/toon/v3/'
                '{agreement_id}/status').format(base_url=self._base_url,
                                                agreement_id=self.agreement.id)
@@ -261,7 +261,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
     @property
     @cached(THERMOSTAT_STATE_CACHE)
     def thermostat_states(self):
-        """The thermostat states of toon, cached for 1 hour"""
+        """The thermostat states of toon, cached for 1 hour."""
         url = ('{base_url}/toon/v3/'
                '{agreement_id}/thermostat/states').format(base_url=self._base_url,
                                                           agreement_id=self.agreement.id)
@@ -322,7 +322,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def smokedetectors(self):
-        """:return: A list of smokedetector objects modeled as named tuples"""
+        """:return: A list of smokedetector objects modeled as named tuples."""
         return [SmokeDetector(smokedetector.get('devUuid'),
                               smokedetector.get('name'),
                               smokedetector.get('lastConnectedChange'),
@@ -333,7 +333,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                                                      {}).get('device', [])]
 
     def get_smokedetector_by_name(self, name):
-        """Retrieves a smokedetector object by its name
+        """Retrieves a smokedetector object by its name.
 
         :param name: The name of the smokedetector to return
         :return: A smokedetector object
@@ -343,14 +343,14 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def lights(self):
-        """:return: A list of light objects"""
+        """:return: A list of light objects."""
         return [Light(self, light.get('name'))
                 for light in self.status.get('deviceStatusInfo',
                                              {}).get('device', [])
                 if light.get('rgbColor')]
 
     def get_light_by_name(self, name):
-        """Retrieves a light object by its name
+        """Retrieves a light object by its name.
 
         :param name: The name of the light to return
         :return: A light object
@@ -367,7 +367,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                 if plug.get('networkHealthState')]
 
     def get_smartplug_by_name(self, name):
-        """Retrieves a smartplug object by its name
+        """Retrieves a smartplug object by its name.
 
         :param name: The name of the smartplug to return
         :return: A smartplug object
@@ -384,7 +384,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def gas(self):
-        """:return: A gas object modeled as a named tuple"""
+        """:return: A gas object modeled as a named tuple."""
         usage = self._get_status_value('gasUsage')
         return Usage(usage.get('avgDayValue'),
                      usage.get('avgValue'),
@@ -396,7 +396,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def power(self):
-        """:return: A power object modeled as a named tuple"""
+        """:return: A power object modeled as a named tuple."""
         power = self._get_status_value('powerUsage')
         return PowerUsage(power.get('avgDayValue'),
                           power.get('avgValue'),
@@ -410,7 +410,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def solar(self):
-        """:return: A solar object modeled as a named tuple"""
+        """:return: A solar object modeled as a named tuple."""
         power = self._get_status_value('powerUsage')
         return Solar(power.get('maxSolar'),
                      power.get('valueProduced'),
@@ -422,7 +422,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def thermostat_info(self):
-        """:return: A thermostatinfo object modeled as a named tuple"""
+        """:return: A thermostatinfo object modeled as a named tuple."""
         info = self._get_status_value('thermostatInfo')
         return ThermostatInfo(info.get('activeState'),
                               info.get('boilerModuleConnected'),
@@ -441,7 +441,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                               info.get('realSetpoint'))
 
     def get_thermostat_state_by_name(self, name):
-        """Retrieves a thermostat state object by its assigned name
+        """Retrieves a thermostat state object by its assigned name.
 
         :param name: The name of the thermostat state
         :return: The thermostat state object
@@ -451,7 +451,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                      if state.name.lower() == name.lower()), None)
 
     def get_thermostat_state_by_id(self, id_):
-        """Retrieves a thermostat state object by its id
+        """Retrieves a thermostat state object by its id.
 
         :param id_: The id of the thermostat state
         :return: The thermostat state object
@@ -461,7 +461,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def burner_on(self):
-        """Boolean value of the state of the burner"""
+        """Boolean value of the state of the burner."""
         return True if int(self.thermostat_info.burner_info) else False
 
     @property
@@ -477,7 +477,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def thermostat_state(self):
-        """The state of the thermostat programming
+        """The state of the thermostat programming.
 
         :return: A thermostat state object of the current setting
         """
@@ -490,7 +490,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @thermostat_state.setter
     def thermostat_state(self, name):
-        """Changes the thermostat state to the one passed as an argument
+        """Changes the thermostat state to the one passed as an argument.
 
         :param name: The name of the thermostat state to change to.
         """
@@ -510,7 +510,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     def thermostat(self):
-        """The current setting of the thermostat as temperature
+        """The current setting of the thermostat as temperature.
 
         :return: A float of the current setting of the temperature of the
         thermostat
@@ -556,7 +556,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @program_state.setter
     def program_state(self, name):
-        """Changes the thermostat program state to the one passed as an argument
+        """Changes the thermostat program state to the one passed as an argument.
 
         :param name: The program state to change to.
         """

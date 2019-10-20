@@ -38,8 +38,11 @@ import requests
 import coloredlogs
 from cachetools import TTLCache, cached
 
-from .configuration import STATES, STATE_CACHING_SECONDS, THERMOSTAT_STATE_CACHING_SECONDS, BURNER_STATES, \
-    PROGRAM_STATES
+from .configuration import (STATES,
+                            STATE_CACHING_SECONDS,
+                            THERMOSTAT_STATE_CACHING_SECONDS,
+                            BURNER_STATES,
+                            PROGRAM_STATES)
 from .helpers import (Agreement,
                       Light,
                       PowerUsage,
@@ -128,7 +131,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                   'redirect_uri': 'http://127.0.0.1',
                   'client_id': self._client_id}
         # it seems to be required to GET the url before submitting data
-        _ = requests.get(url, params=params)
+        _ = self._authenticated_get(url, params=params)
         del _
         post_url = '{url}/legacy'.format(url=url)
         payload = {'username': self._username,
@@ -150,7 +153,6 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         return code
 
     def _authenticate(self):
-        self._monkey_patch_requests()
         code = self._get_challenge_code()
         self._token = self._get_token(code)
         self._set_headers(self._token)
@@ -170,7 +172,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     def _get_agreements(self):
         url = '{base_url}/toon/v3/agreements'.format(base_url=self._base_url)
-        response = requests.get(url, headers=self._headers)
+        response = self._authenticated_get(url, headers=self._headers)
         try:
             agreements = response.json()
             self.agreements = [Agreement(agreement.get('agreementId'),
@@ -244,11 +246,11 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         url = ('{base_url}/toon/v3/'
                '{agreement_id}/status').format(base_url=self._base_url,
                                                agreement_id=self.agreement.id)
-        response = requests.get(url, headers=self._headers)
+        response = self._authenticated_get(url, headers=self._headers)
         if response.status_code == 202:
             self._logger.debug('Response accepted but no data yet, '
                                'trying one more time...')
-        response = requests.get(url, headers=self._headers)
+        response = self._authenticated_get(url, headers=self._headers)
         try:
             data = response.json()
         except ValueError:
@@ -263,11 +265,11 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         url = ('{base_url}/toon/v3/'
                '{agreement_id}/thermostat/states').format(base_url=self._base_url,
                                                           agreement_id=self.agreement.id)
-        response = requests.get(url, headers=self._headers)
+        response = self._authenticated_get(url, headers=self._headers)
         if response.status_code == 202:
             self._logger.debug('Response accepted but no data yet, '
                                'trying one more time...')
-        response = requests.get(url, headers=self._headers)
+        response = self._authenticated_get(url, headers=self._headers)
         try:
             states = response.json().get('state', [])
         except ValueError:
@@ -280,17 +282,10 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                                 state.get('dhw'))
                 for state in states]
 
-    def _monkey_patch_requests(self):
-        self.original_request = requests.get  # pylint: disable=attribute-defined-outside-init
-        requests.get = self._patched_request
-
-    def _patched_request(self, *args, **kwargs):
+    def _authenticated_get(self, *args, **kwargs):
         url = args[0]
         self._logger.debug('Using patched request for url %s', url)
-        response = self.original_request(*args, **kwargs)
-        if not url.startswith(self._base_url):
-            self._logger.debug('Url "%s" requested is not from toon api, passing through', url)
-            return response
+        response = requests.get(*args, **kwargs)
         try:
             response_json = response.json()
         except ValueError:
@@ -307,7 +302,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                 {'Authorization': 'Bearer {}'.format(self._token.access_token)})
             self._update_headers()
             self._logger.debug('Updated headers, trying again initial request')
-            response = self.original_request(*args, **kwargs)
+            response = requests.get(*args, **kwargs)
         return response
 
     def _clear_cache(self):
@@ -318,7 +313,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         url = '{base}{endpoint}'.format(base=self._api_url,
                                         endpoint=endpoint)
 
-        response = requests.get(url, params=params, headers=self._headers)
+        response = self._authenticated_get(url, params=params, headers=self._headers)
         if not response.ok:
             self._logger.error(response.content)
             return {}
@@ -503,7 +498,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         id_ = next((id_ for id_, state in STATES.items()
                     if state.lower() == name.lower()), None)
         url = '{api_url}/thermostat'.format(api_url=self._api_url)
-        data = requests.get(url, headers=self._headers).json()
+        data = self._authenticated_get(url, headers=self._headers).json()
         data["activeState"] = id_
         data["programState"] = 2
         data["currentSetpoint"] = self.get_thermostat_state_by_id(id_).temperature
@@ -534,7 +529,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
             self._logger.error('Please supply a valid temperature e.g: 20')
             return
         url = '{api_url}/thermostat'.format(api_url=self._api_url)
-        response = requests.get(url, headers=self._headers)
+        response = self._authenticated_get(url, headers=self._headers)
         if not response.ok:
             self._logger.error(response.content)
             return
@@ -570,7 +565,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         if id_ is None:
             raise InvalidProgramState(name)
         url = '{api_url}/thermostat'.format(api_url=self._api_url)
-        data = requests.get(url, headers=self._headers).json()
+        data = self._authenticated_get(url, headers=self._headers).json()
         data["programState"] = id_
         response = requests.put(url,
                                 data=json.dumps(data),

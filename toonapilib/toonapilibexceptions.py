@@ -24,7 +24,7 @@
 #
 
 """
-Custom exception code for toonapilib
+Custom exception code for toonapilib.
 
 .. _Google Python Style Guide:
    http://google.github.io/styleguide/pyguide.html
@@ -43,28 +43,28 @@ __status__ = '''Development'''  # "Prototype", "Development", "Production".
 
 
 class InvalidConsumerSecret(Exception):
-    """The consumer secret is invalid"""
+    """The consumer secret is invalid."""
 
 
 class InvalidConsumerKey(Exception):
-    """The consumer key is invalid"""
+    """The consumer key is invalid."""
 
 
 class InvalidCredentials(Exception):
-    """The username and password combination was not accepted as valid"""
+    """The username and password combination was not accepted as valid."""
 
 
 class InvalidThermostatState(Exception):
-    """The state provided to the thermostat is not a valid one"""
+    """The state provided to the thermostat is not a valid one."""
 
 
 class InvalidProgramState(Exception):
-    """The state provided to the program is not a valid one"""
+    """The state provided to the program is not a valid one."""
 
 
 class IncompleteStatus(Exception):
-    """The status received is missing vital information and is unusable"""
+    """The status received is missing vital information and is unusable."""
 
 
 class AgreementsRetrievalError(Exception):
-    """Could not retrieve agreements"""
+    """Could not retrieve agreements."""

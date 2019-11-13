@@ -24,7 +24,7 @@
 #
 
 """
-toonapilib package
+toonapilib package.
 
 Import all parts from toonapilib here
 

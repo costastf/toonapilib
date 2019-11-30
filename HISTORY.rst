@@ -117,3 +117,9 @@ History
 ------------------
 
 * Implemented new token authentication and removed all references to the old authentication method which will not be supported after 01/12/19. Added backoff for some methods.
+
+
+4.1.0 (30-11-2019)
+------------------
+
+* Exposed display names attribute since it is used in Home Assistant internally.

@@ -154,6 +154,16 @@ class Toon:  # pylint: disable=too-many-instance-attributes
             raise AgreementsRetrievalError(response.text)
         return agreements
 
+    @property
+    def display_names(self):
+        """The ids of all the agreements.
+
+        Returns:
+            list: A list of the agreement ids.
+
+        """
+        return [agreement.display_common_name.lower() for agreement in self.agreements]
+
     def _reset(self):
         self.agreements = None
         self.agreement = None

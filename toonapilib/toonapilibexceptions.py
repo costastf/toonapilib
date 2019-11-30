@@ -42,16 +42,12 @@ __email__ = '''<costas.tyf@gmail.com>'''
 __status__ = '''Development'''  # "Prototype", "Development", "Production".
 
 
-class InvalidConsumerSecret(Exception):
-    """The consumer secret is invalid."""
+class InvalidAuthenticationToken(Exception):
+    """The authentication token provided was not accepted as valid."""
 
 
-class InvalidConsumerKey(Exception):
-    """The consumer key is invalid."""
-
-
-class InvalidCredentials(Exception):
-    """The username and password combination was not accepted as valid."""
+class InvalidDisplayName(Exception):
+    """The display name provided was not accepted as valid."""
 
 
 class InvalidThermostatState(Exception):

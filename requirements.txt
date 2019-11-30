@@ -11,3 +11,4 @@ coloredlogs~=10.0
 requests~=2.22.0
 cachetools~=3.1.1
 dateparser~=0.7.2
+backoff~=1.9.2

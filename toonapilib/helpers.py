@@ -24,11 +24,9 @@
 #
 """All helper objects will live here."""
 
-import json
 import logging
 from collections import namedtuple
 
-import requests
 import dateparser
 
 __author__ = '''Costas Tyfoxylos <costas.tyf@gmail.com>'''
@@ -40,11 +38,6 @@ LOGGER = logging.getLogger(LOGGER_BASENAME)
 LOGGER.addHandler(logging.NullHandler())
 
 ACCEPTED_INTERVAL = ['hours', 'days', 'weeks', 'months', 'years']
-
-Token = namedtuple('Token', ['access_token',
-                             'refresh_token_expires_in',
-                             'expires_in',
-                             'refresh_token'])
 
 User = namedtuple('User', ['client_id',
                            'client_secret',
@@ -282,11 +275,9 @@ class Switch:
         else:
             url = '{api_url}/devices/{id}'.format(api_url=self.toon._api_url,  # pylint: disable=protected-access
                                                   id=self.device_uuid)
-            data = requests.get(url, headers=self.toon._headers).json()  # pylint: disable=protected-access
+            data = self.toon._session.get(url).json()  # pylint: disable=protected-access
             data["currentState"] = int(state)
-            response = requests.put(url,
-                                    data=json.dumps(data),
-                                    headers=self.toon._headers)  # pylint: disable=protected-access
+            response = self.toon._session.put(url, json=data)  # pylint: disable=protected-access
             self._logger.debug('Response received {}'.format(response.content))
             self.toon._clear_cache()  # noqa
             return True

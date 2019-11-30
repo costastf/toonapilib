@@ -40,12 +40,9 @@ To use toonapilib in a project:
 
     from toonapilib import Toon
 
-    eneco_username = 'USERNAME'
-    eneco_password = 'PASSWORD'
-    consumer_key='CONSUMER_KEY_FROM_API_REGISTRATION'
-    consumer_secret='CONSUMER_SECRET_FROM_API_REGISTRATION'
+    token = '1234-abcdefg-9876654'
 
-    toon = Toon(eneco_username, eneco_password, consumer_key, consumer_secret)
+    toon = Toon(token)
 
 
 

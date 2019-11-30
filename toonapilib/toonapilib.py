@@ -31,12 +31,12 @@ Main code for toonapilib.
 
 """
 
-import json
 import logging
 
-import requests
+import backoff
 import coloredlogs
 from cachetools import TTLCache, cached
+from requests import Session
 
 from .configuration import (STATES,
                             STATE_CACHING_SECONDS,
@@ -51,14 +51,12 @@ from .helpers import (Agreement,
                       Solar,
                       ThermostatInfo,
                       ThermostatState,
-                      Token,
                       Usage,
                       Data)
-from .toonapilibexceptions import (InvalidCredentials,
+from .toonapilibexceptions import (InvalidAuthenticationToken,
+                                   InvalidDisplayName,
                                    InvalidThermostatState,
                                    InvalidProgramState,
-                                   InvalidConsumerKey,
-                                   InvalidConsumerSecret,
                                    IncompleteStatus,
                                    AgreementsRetrievalError)
 
@@ -82,17 +80,14 @@ LOGGER.addHandler(logging.NullHandler())
 STATE_CACHE = TTLCache(maxsize=1, ttl=STATE_CACHING_SECONDS)
 THERMOSTAT_STATE_CACHE = TTLCache(maxsize=1, ttl=THERMOSTAT_STATE_CACHING_SECONDS)
 
-EXPIRED_TOKEN_FAULT_STRING = 'Access Token expired'
+INVALID_TOKEN = 'Invalid Access Token'
 
 
-class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
+class Toon:  # pylint: disable=too-many-instance-attributes
     """Model of the toon smart meter from eneco."""
 
-    def __init__(self,  # pylint: disable=too-many-arguments
-                 eneco_username,
-                 eneco_password,
-                 consumer_key,
-                 consumer_secret,
+    def __init__(self,
+                 authentication_token,
                  tenant_id='eneco',
                  display_common_name=None):
         logger_name = u'{base}.{suffix}'.format(base=LOGGER_BASENAME,
@@ -100,140 +95,64 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         self._logger = logging.getLogger(logger_name)
         self._base_url = 'https://api.toon.eu/'
         self._api_url = None
-        self._username = eneco_username
-        self._password = eneco_password
-        self._client_id = consumer_key
-        self._client_secret = consumer_secret
-        self._tenant_id = tenant_id
         self.agreements = None
         self.agreement = None
-        self._headers = None
-        self._token = None
+        self._tenant_id = tenant_id
+        self._session = self._get_authenticated_session(authentication_token, display_common_name)
         self.data = Data(self)
-        self._authenticate()
+
+    def _get_authenticated_session(self, token, display_common_name):
+        session = Session()
+        session.headers.update({'Authorization': 'Bearer {}'.format(token),
+                                'content-type': 'application/json',
+                                'cache-control': 'no-cache'})
+        agreements = self._get_agreements(session)
         if display_common_name:
-            self.enable_by_display_common_name(display_common_name)
-
-    @property
-    def display_names(self):
-        """The ids of all the agreements.
-
-        Returns:
-            list: A list of the agreement ids.
-
-        """
-        return [agreement.display_common_name.lower() for agreement in self.agreements]
-
-    def _get_challenge_code(self):
-        url = '{base_url}/authorize'.format(base_url=self._base_url)
-        params = {'tenant_id': self._tenant_id,
-                  'response_type': 'code',
-                  'redirect_uri': 'http://127.0.0.1',
-                  'client_id': self._client_id}
-        # it seems to be required to GET the url before submitting data
-        _ = self._authenticated_get(url, params=params)
-        del _
-        post_url = '{url}/legacy'.format(url=url)
-        payload = {'username': self._username,
-                   'password': self._password,
-                   'tenant_id': self._tenant_id,
-                   'response_type': 'code',
-                   'client_id': self._client_id,
-                   'state': '',
-                   'scope': ''}
-        response = requests.post(post_url, data=payload, allow_redirects=False)
-        if response.status_code != 302:
-            raise InvalidConsumerKey(response.text)
-        try:
-            location = response.headers.get('Location')
-            code = location.split('code=')[1].split('&scope')[0]
-        except IndexError:
-            # message = 'Please make sure your credentials and keys are correct.'
-            raise InvalidCredentials(response.text)
-        return code
-
-    def _authenticate(self):
-        code = self._get_challenge_code()
-        self._token = self._get_token(code)
-        self._set_headers(self._token)
-        self._get_agreements()
-        self._update_headers()
+            self._logger.debug('Looking for agreement set with display common name %s', display_common_name)
+            agreement = next((agreement for agreement in agreements
+                              if agreement.display_common_name.lower() == display_common_name.lower()), None)
+            if not agreement:
+                return InvalidDisplayName(display_common_name)
+        else:
+            self._logger.debug('No display common name provided, using first agreement retrieved')
+            agreement = agreements[0]
+        self._logger.debug('Setting appropriate headers for agreement %s', agreement)
+        session.headers.update({'X-Common-Name': agreement.display_common_name,
+                                'X-Agreement-ID': agreement.id})
         self._api_url = '{}/toon/v3/{}'.format(self._base_url,
-                                               self.agreement.id)
+                                               agreement.id)
+        self.agreements = agreements
+        self.agreement = agreement
+        return session
 
-    def _set_headers(self, token):
-        self._headers = {'Authorization': 'Bearer {}'.format(token.access_token),
-                         'content-type': 'application/json',
-                         'cache-control': 'no-cache'}
-
-    def _update_headers(self):
-        self._headers.update({'X-Common-Name': self.agreement.display_common_name,
-                              'X-Agreement-ID': self.agreement.id})
-
-    def _get_agreements(self):
+    def _get_agreements(self, session):
         url = '{base_url}/toon/v3/agreements'.format(base_url=self._base_url)
-        response = self._authenticated_get(url, headers=self._headers)
+        self._logger.debug('Getting agreements from url %s', url)
+        agreements_json = {}
+        response = session.get(url)
         try:
-            agreements = response.json()
-            self.agreements = [Agreement(agreement.get('agreementId'),
-                                         agreement.get('agreementIdChecksum'),
-                                         agreement.get('heatingType'),
-                                         agreement.get('displayCommonName'),
-                                         agreement.get('displayHardwareVersion'),
-                                         agreement.get('displaySoftwareVersion'),
-                                         agreement.get('isToonSolar'),
-                                         agreement.get('isToonly'))
-                               for agreement in agreements]
-        except (ValueError, AttributeError):
+            agreements_json = response.json()
+            self._logger.debug('Got agreements response :%s', agreements_json)
+            agreements = [Agreement(agreement.get('agreementId'),
+                                    agreement.get('agreementIdChecksum'),
+                                    agreement.get('heatingType'),
+                                    agreement.get('displayCommonName'),
+                                    agreement.get('displayHardwareVersion'),
+                                    agreement.get('displaySoftwareVersion'),
+                                    agreement.get('isToonSolar'),
+                                    agreement.get('isToonly'))
+                          for agreement in agreements_json]
+        except AttributeError:
+            try:
+                if agreements_json.get('fault', {}).get('faultstring', {}) == INVALID_TOKEN:
+                    raise InvalidAuthenticationToken
+            except AttributeError:
+                self._logger.debug('Unable to get agreements')
+                raise AgreementsRetrievalError(response.text)
+        except ValueError:
             self._logger.debug('Unable to get agreements')
             raise AgreementsRetrievalError(response.text)
-        self.agreement = self.agreements[0]
-
-    def enable_by_display_common_name(self, display_common_name):
-        """Enables an agreement by it's display common name.
-
-        Args:
-            display_common_name: The display common name of the agreement to enable
-
-        Returns:
-            bool: True on success, False otherwise
-
-        """
-        if display_common_name.lower() not in self.display_names:
-            self._logger.error('No agreement with display name %s', display_common_name)
-            return False
-        agreement = next((agreement for agreement in self.agreements
-                          if agreement.display_common_name.lower() == display_common_name.lower()), None)
-        if agreement:
-            self.agreement = agreement
-            return True
-        return False
-
-    def _get_token(self, code):
-        payload = {'client_id': self._client_id,
-                   'client_secret': self._client_secret,
-                   'grant_type': 'authorization_code',
-                   'code': code}
-        return self._retrieve_token(payload)
-
-    def _refresh_token(self):
-        payload = {'client_id': self._client_id,
-                   'client_secret': self._client_secret,
-                   'grant_type': 'refresh_token',
-                   'refresh_token': self._token.refresh_token}
-        return self._retrieve_token(payload)
-
-    def _retrieve_token(self, payload):
-        headers = {'content-type': 'application/x-www-form-urlencoded'}
-        url = '{base_url}/token'.format(base_url=self._base_url)
-        response = requests.post(url, headers=headers, data=payload)
-        tokens = response.json()
-        self._logger.debug(tokens)
-        token_values = [tokens.get(key) for key in Token._fields]
-        if not all(token_values):
-            self._logger.exception(response.content)
-            raise InvalidConsumerSecret(response.text)
-        return Token(*token_values)
+        return agreements
 
     def _reset(self):
         self.agreements = None
@@ -241,16 +160,15 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     @cached(STATE_CACHE)
+    @backoff.on_exception(backoff.expo, IncompleteStatus)
     def status(self):
         """The status of toon, cached for 300 seconds."""
-        url = ('{base_url}/toon/v3/'
-               '{agreement_id}/status').format(base_url=self._base_url,
-                                               agreement_id=self.agreement.id)
-        response = self._authenticated_get(url, headers=self._headers)
+        url = '{api_url}/status'.format(api_url=self._api_url)
+        response = self._session.get(url)
         if response.status_code == 202:
             self._logger.debug('Response accepted but no data yet, '
                                'trying one more time...')
-        response = self._authenticated_get(url, headers=self._headers)
+        response = self._session.get(url)
         try:
             data = response.json()
         except ValueError:
@@ -260,16 +178,15 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
 
     @property
     @cached(THERMOSTAT_STATE_CACHE)
+    @backoff.on_exception(backoff.expo, IncompleteStatus)
     def thermostat_states(self):
         """The thermostat states of toon, cached for 1 hour."""
-        url = ('{base_url}/toon/v3/'
-               '{agreement_id}/thermostat/states').format(base_url=self._base_url,
-                                                          agreement_id=self.agreement.id)
-        response = self._authenticated_get(url, headers=self._headers)
+        url = '{api_url}/thermostat/states'.format(api_url=self._api_url)
+        response = self._session.get(url)
         if response.status_code == 202:
             self._logger.debug('Response accepted but no data yet, '
                                'trying one more time...')
-        response = self._authenticated_get(url, headers=self._headers)
+        response = self._session.get(url)
         try:
             states = response.json().get('state', [])
         except ValueError:
@@ -282,29 +199,6 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
                                 state.get('dhw'))
                 for state in states]
 
-    def _authenticated_get(self, *args, **kwargs):
-        url = args[0]
-        self._logger.debug('Using patched request for url %s', url)
-        response = requests.get(*args, **kwargs)
-        try:
-            response_json = response.json()
-        except ValueError:
-            message = ('Did not receive valid json, '
-                       'response was:{}').format(response.text)
-            response_json = {}
-            self._logger.debug(message)
-        if response.status_code == 401 and \
-                response_json.get('fault', {}).get('faultstring', '') == EXPIRED_TOKEN_FAULT_STRING:
-            self._logger.info('Expired token detected, trying to refresh!')
-            self._token = self._refresh_token()
-            self._set_headers(self._token)
-            kwargs['headers'].update(
-                {'Authorization': 'Bearer {}'.format(self._token.access_token)})
-            self._update_headers()
-            self._logger.debug('Updated headers, trying again initial request')
-            response = requests.get(*args, **kwargs)
-        return response
-
     def _clear_cache(self):
         self._logger.debug('Clearing state cache.')
         STATE_CACHE.clear()
@@ -313,7 +207,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         url = '{base}{endpoint}'.format(base=self._api_url,
                                         endpoint=endpoint)
 
-        response = self._authenticated_get(url, params=params, headers=self._headers)
+        response = self._session.get(url, params=params)
         if not response.ok:
             self._logger.error(response.content)
             return {}
@@ -375,6 +269,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         return next((plug for plug in self.smartplugs
                      if plug.name.lower() == name.lower()), None)
 
+    @backoff.on_exception(backoff.expo, IncompleteStatus)
     def _get_status_value(self, value):
         try:
             output = self.status[value]
@@ -498,13 +393,11 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         id_ = next((id_ for id_, state in STATES.items()
                     if state.lower() == name.lower()), None)
         url = '{api_url}/thermostat'.format(api_url=self._api_url)
-        data = self._authenticated_get(url, headers=self._headers).json()
+        data = self._session.get(url).json()
         data["activeState"] = id_
         data["programState"] = 2
         data["currentSetpoint"] = self.get_thermostat_state_by_id(id_).temperature
-        response = requests.put(url,
-                                data=json.dumps(data),
-                                headers=self._headers)
+        response = self._session.put(url, json=data)
         self._logger.debug('Response received {}'.format(response.content))
         self._clear_cache()
 
@@ -529,7 +422,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
             self._logger.error('Please supply a valid temperature e.g: 20')
             return
         url = '{api_url}/thermostat'.format(api_url=self._api_url)
-        response = self._authenticated_get(url, headers=self._headers)
+        response = self._session.get(url)
         if not response.ok:
             self._logger.error(response.content)
             return
@@ -537,9 +430,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         data["currentSetpoint"] = target
         data["activeState"] = -1
         data["programState"] = 2
-        response = requests.put(url,
-                                data=json.dumps(data),
-                                headers=self._headers)
+        response = self._session.put(url, json=data)
         if not response.ok:
             self._logger.error(response.content)
             return
@@ -565,11 +456,9 @@ class Toon:  # pylint: disable=too-many-instance-attributes,too-many-public-meth
         if id_ is None:
             raise InvalidProgramState(name)
         url = '{api_url}/thermostat'.format(api_url=self._api_url)
-        data = self._authenticated_get(url, headers=self._headers).json()
+        data = self._session.get(url).json()
         data["programState"] = id_
-        response = requests.put(url,
-                                data=json.dumps(data),
-                                headers=self._headers)
+        response = self._session.put(url, json=data)
         self._logger.debug('Response received {}'.format(response.content))
         self._clear_cache()
 

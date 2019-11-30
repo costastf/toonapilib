@@ -111,3 +111,9 @@ History
 * Removed monkey patching of requests and implemented explicit handling of re authentication.
 * Updated tempalate and bumped dependencies.
 * Linted.
+
+
+4.0.0 (30-11-2019)
+------------------
+
+* Implemented new token authentication and removed all references to the old authentication method which will not be supported after 01/12/19. Added backoff for some methods.

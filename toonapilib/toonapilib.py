@@ -33,7 +33,6 @@ Main code for toonapilib.
 
 import logging
 
-import backoff
 import coloredlogs
 from cachetools import TTLCache, cached
 from requests import Session
@@ -170,7 +169,6 @@ class Toon:  # pylint: disable=too-many-instance-attributes
 
     @property
     @cached(STATE_CACHE)
-    @backoff.on_exception(backoff.expo, IncompleteStatus)
     def status(self):
         """The status of toon, cached for 300 seconds."""
         url = '{api_url}/status'.format(api_url=self._api_url)
@@ -178,7 +176,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes
         if response.status_code == 202:
             self._logger.debug('Response accepted but no data yet, '
                                'trying one more time...')
-        response = self._session.get(url)
+            response = self._session.get(url)
         try:
             data = response.json()
         except ValueError:
@@ -188,7 +186,6 @@ class Toon:  # pylint: disable=too-many-instance-attributes
 
     @property
     @cached(THERMOSTAT_STATE_CACHE)
-    @backoff.on_exception(backoff.expo, IncompleteStatus)
     def thermostat_states(self):
         """The thermostat states of toon, cached for 1 hour."""
         url = '{api_url}/thermostat/states'.format(api_url=self._api_url)
@@ -196,7 +193,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes
         if response.status_code == 202:
             self._logger.debug('Response accepted but no data yet, '
                                'trying one more time...')
-        response = self._session.get(url)
+            response = self._session.get(url)
         try:
             states = response.json().get('state', [])
         except ValueError:
@@ -279,7 +276,6 @@ class Toon:  # pylint: disable=too-many-instance-attributes
         return next((plug for plug in self.smartplugs
                      if plug.name.lower() == name.lower()), None)
 
-    @backoff.on_exception(backoff.expo, IncompleteStatus)
     def _get_status_value(self, value):
         try:
             output = self.status[value]

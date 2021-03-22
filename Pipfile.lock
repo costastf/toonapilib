@@ -14,14 +14,6 @@
         ]
     },
     "default": {
-        "backoff": {
-            "hashes": [
-                "sha256:76224b65f1808fd61dc14129e3e9de50cb1f7efaef608b657f7b108863ee15a7",
-                "sha256:794e9765eb4acb5014c7e1e1fc4f69abc4d176a7c2b6753b8dae2f2e69af4df9"
-            ],
-            "index": "pypi",
-            "version": "==1.9.2"
-        },
         "cachetools": {
             "hashes": [
                 "sha256:428266a1c0d36dc5aca63a2d7c5942e88c2c898d72139fca0e97fdd2380517ae",

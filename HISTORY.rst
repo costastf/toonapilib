@@ -123,3 +123,9 @@ History
 ------------------
 
 * Exposed display names attribute since it is used in Home Assistant internally.
+
+
+4.1.1 (07-07-2021)
+------------------
+
+* Added pipeline and linted.

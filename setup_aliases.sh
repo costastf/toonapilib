@@ -10,10 +10,10 @@ done
 
 function _activate() {
     EXIT_CODE=false
-    for path in '.venv/bin/activate' '_CI/files/.venv/bin/activate'
+    for path_ in '.venv/bin/activate' '_CI/files/.venv/bin/activate'
         do
-            if [ -f "${path}" ]; then
-                . "${path}"
+            if [ -f "${path_}" ]; then
+                . "${path_}"
                 EXIT_CODE=true
                 break
             fi

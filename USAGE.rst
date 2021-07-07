@@ -22,10 +22,10 @@ To develop on toonapilib:
     _CI/scripts/build.py
 
     # To see the package version
-    _CI/scipts/tag.py
+    _CI/scripts/tag.py
 
     # To bump semantic versioning [--major|--minor|--patch]
-    _CI/scipts/tag.py --major|--minor|--patch
+    _CI/scripts/tag.py --major|--minor|--patch
 
     # To upload the project to a pypi repo if user and password are properly provided
     _CI/scripts/upload.py

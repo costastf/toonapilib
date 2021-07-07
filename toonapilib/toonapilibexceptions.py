@@ -33,7 +33,7 @@ Custom exception code for toonapilib.
 
 __author__ = '''Costas Tyfoxylos <costas.tyf@gmail.com>'''
 __docformat__ = '''google'''
-__date__ = '''2017-12-09'''
+__date__ = '''09-12-2017'''
 __copyright__ = '''Copyright 2017, Costas Tyfoxylos'''
 __credits__ = ["Costas Tyfoxylos"]
 __license__ = '''MIT'''

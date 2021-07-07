@@ -55,7 +55,7 @@ def check_branch():
 
 def push(current_version):
     git = Git()
-    git.commit('Updated history file with changelog', 'HISTORY.rst')
+    git.commit('Add commit to history file', 'HISTORY.rst')
     git.commit('Set version to {}'.format(current_version), '.VERSION')
     git.add_tag(current_version)
     git.push()

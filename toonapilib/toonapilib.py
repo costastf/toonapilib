@@ -64,13 +64,14 @@ coloredlogs.auto_install()
 
 __author__ = '''Costas Tyfoxylos <costas.tyf@gmail.com>'''
 __docformat__ = '''google'''
-__date__ = '''2017-12-09'''
+__date__ = '''09-12-2017'''
 __copyright__ = '''Copyright 2017, Costas Tyfoxylos'''
 __credits__ = ["Costas Tyfoxylos"]
 __license__ = '''MIT'''
 __maintainer__ = '''Costas Tyfoxylos'''
 __email__ = '''<costas.tyf@gmail.com>'''
 __status__ = '''Development'''  # "Prototype", "Development", "Production".
+
 
 # This is the main prefix used for logging
 LOGGER_BASENAME = '''toonapilib'''
@@ -83,7 +84,7 @@ THERMOSTAT_STATE_CACHE = TTLCache(maxsize=1, ttl=THERMOSTAT_STATE_CACHING_SECOND
 INVALID_TOKEN = 'Invalid Access Token'
 
 
-class Toon:  # pylint: disable=too-many-instance-attributes
+class Toon:  # pylint: disable=too-many-instance-attributes, too-many-public-methods
     """Model of the toon smart meter from eneco."""
 
     def __init__(self,
@@ -367,7 +368,7 @@ class Toon:  # pylint: disable=too-many-instance-attributes
     @property
     def burner_on(self):
         """Boolean value of the state of the burner."""
-        return True if int(self.thermostat_info.burner_info) else False
+        return bool(self.thermostat_info.burner_info)
 
     @property
     def burner_state(self):

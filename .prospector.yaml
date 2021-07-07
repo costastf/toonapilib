@@ -10,3 +10,4 @@ pep257:
 ignore-paths:
   - _CI
   - build
+  - docs
